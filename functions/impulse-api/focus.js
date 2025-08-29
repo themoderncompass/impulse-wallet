@@ -1,5 +1,12 @@
 // functions/impulse-api/focus.js
-import { json } from "./util";
+
+// local json helper (avoid cross-file import path issues)
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" }
+  });
+}
 
 async function getCols(env, table) {
   const info = await env.DB.prepare(`PRAGMA table_info(${table})`).all();
@@ -94,19 +101,4 @@ export async function onRequestPost({ request, env }) {
 
     const pid = derivePid(roomCode, player);
     const exists = await env.DB
-      .prepare(`SELECT id FROM weekly_focus WHERE room_code = ? AND player_id = ? AND week_key = ?`)
-      .bind(roomCode, pid, weekKey)
-      .first();
-
-    if (exists) return json({ error: "Weekly focus already set for this week" }, 409);
-
-    await env.DB
-      .prepare(`INSERT INTO weekly_focus (room_code, player_id, player_name, week_key, areas, locked) VALUES (?, ?, ?, ?, ?, 1)`)
-      .bind(roomCode, pid, player ?? null, weekKey, JSON.stringify(clean))
-      .run();
-
-    return json({ roomCode, player, playerId: pid, weekKey, areas: clean, locked: true }, 201);
-  } catch (e) {
-    return json({ error: e?.message || String(e) }, 500);
-  }
-}
+      .prepare(`SELECT id
