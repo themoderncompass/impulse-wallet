@@ -2,12 +2,39 @@
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
 
-// --- audio (optional feedback) ---
-const SOUND_GOOD = "https://cdn.pixabay.com/download/audio/2022/08/02/audio_2a1f1b.mp3?filename=new-notification-017-352293.mp3";
-const SOUND_BAD  = "https://cdn.pixabay.com/download/audio/2021/08/04/audio_0a2e6b.mp3?filename=windows-error-sound-effect-35894.mp3";
-let audioEnabled = false;
-const sndGood = new Audio(SOUND_GOOD), sndBad = new Audio(SOUND_BAD);
-document.addEventListener("click", () => { audioEnabled = true; }, { once: true });
+// --- SFX (local, robust) ---
+const SFX = {
+  good: "/sfx/good.mp3",
+  bad:  "/sfx/bad.mp3",
+};
+
+// Preload base clips; we’ll clone per play so we never fight currentTime/readyState
+const baseGood = new Audio(SFX.good);
+const baseBad  = new Audio(SFX.bad);
+baseGood.preload = "auto";
+baseBad.preload  = "auto";
+
+let audioUnlocked = false;
+async function unlockAudioOnce() {
+  if (audioUnlocked) return;
+  try { baseGood.muted = true; await baseGood.play(); baseGood.pause(); baseGood.currentTime = 0; baseGood.muted = false; } catch {}
+  try { baseBad.muted  = true; await baseBad.play();  baseBad.pause();  baseBad.currentTime  = 0; baseBad.muted  = false; } catch {}
+  audioUnlocked = true;
+}
+// Satisfy iOS “user gesture” requirement
+["pointerdown","touchstart","click","keydown"].forEach(evt => {
+  window.addEventListener(evt, unlockAudioOnce, { once: true, passive: true });
+});
+
+function playSfx(kind) {
+  if (!audioUnlocked) return; // respect autoplay policy until unlocked
+  try {
+    const src = kind === "good" ? SFX.good : SFX.bad;
+    const a = new Audio(src);
+    a.play().catch(()=>{});
+  } catch {}
+}
+
 
 // --- dom refs ---
 const $ = (sel) => document.querySelector(sel);
@@ -140,6 +167,10 @@ async function doJoin() {
 async function submit(amount) {
   try {
     if (!roomCode) throw new Error("Join or create a room first");
+
+    // play sound instantly, before network call
+    playSfx(amount === 1 ? "good" : "bad");
+
     const impulse = (el.impulse.value || "").trim();
     await api("/state", {
       method: "POST",
@@ -147,12 +178,6 @@ async function submit(amount) {
     });
     el.impulse.value = "";
     await refresh();
-    if (audioEnabled) {
-      try {
-        const s = amount === 1 ? sndGood : sndBad;
-        s.currentTime = 0; s.play();
-      } catch {}
-    }
   } catch (e) {
     console.error(e);
     alert(`Save failed: ${e.message}`);
