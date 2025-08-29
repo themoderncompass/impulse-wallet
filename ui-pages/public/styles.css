@@ -13,22 +13,52 @@ body {
   padding: 0 1rem;
 }
 
+/* Header: logo + title left, Instructions button right; tagline below */
 .header {
   display: flex;
-  flex-direction: column;
-  align-items: center; /* center logo and text */
-  text-align: center;
-  gap: .5rem;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;           /* mobile-safe: wraps items */
   margin-bottom: 1rem;
 }
 
-.logo { /* legacy logo class (safe to keep if used elsewhere) */
-  height: 48px;
-  width: auto;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.app-logo {
+  max-width: 48px;           /* header logo size */
+  height: auto;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.5rem;
 }
 
 .sub {
+  width: 100%;
+  text-align: center;
   color: #555;
+  margin-top: .5rem;
+}
+
+/* Instructions button (header action) */
+.instructions-btn {
+  background: #2e3a87;
+  color: #fff;
+  border: 1px solid #24306d;
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.instructions-btn:focus {
+  outline: 2px solid #99a3ff;
+  outline-offset: 2px;
 }
 
 .card {
@@ -78,7 +108,7 @@ button {
 button.primary { background: #2e3a87; color: #fff }
 button.secondary { background: #fff; border-color: #cfd3db; color: #111 }
 button.good { background: #0b7; color: #fff; border-color: #0a6 }
-button.bad { background: #d33; color: #fff; border-color: #c22 }
+button.bad  { background: #d33; color: #fff; border-color: #c22 }
 
 .hidden { display: none }
 
@@ -122,43 +152,6 @@ th, td {
   gap: .5rem;
   align-items: center;
   margin: .5rem 0;
-}
-
-@media (max-width:640px) {
-  .join { grid-template-columns: 1fr }
-  .controls { flex-direction: column }
-}
-
-/* Centered app logo */
-.app-logo {
-  max-width: 160px; /* desktop/tablet size */
-  height: auto;
-}
-
-/* On smaller screens, shrink further */
-@media (max-width: 640px) {
-  .app-logo {
-    max-width: 100px; /* adjust until it feels right on iPhone */
-  }
-}
-/* Instructions button (floating) */
-.instructions-btn {
-  position: fixed;
-  right: 16px;
-  bottom: 16px;
-  z-index: 1000;
-  background: #2e3a87;
-  color: #fff;
-  border: 1px solid #24306d;
-  border-radius: 999px;
-  padding: .6rem .9rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
-}
-.instructions-btn:focus {
-  outline: 2px solid #99a3ff;
-  outline-offset: 2px;
 }
 
 /* Modal */
@@ -207,3 +200,11 @@ th, td {
 .modal-body { margin-top: .25rem; }
 .modal-body ol, .modal-body ul { margin: .5rem 0 .25rem 1.25rem; }
 .modal-body h3 { margin-top: 1rem; }
+
+/* Responsive tweaks */
+@media (max-width: 640px) {
+  .join { grid-template-columns: 1fr }
+  .controls { flex-direction: column }
+  .app-logo { max-width: 40px }           /* smaller logo on phones */
+  .instructions-btn { padding: .45rem .6rem }
+}
