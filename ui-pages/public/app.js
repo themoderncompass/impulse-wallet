@@ -2,36 +2,58 @@
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
 
-// --- SFX (local, robust) ---
-const SFX = {
-  good: "/sfx/good.mp3",
-  bad:  "/sfx/bad.mp3",
-};
+// --- SFX via Web Audio (iOS-friendly) ---
+const SFX = { good: "/sfx/good.mp3", bad: "/sfx/bad.mp3" };
 
-// Preload base clips; we’ll clone per play so we never fight currentTime/readyState
-const baseGood = new Audio(SFX.good);
-const baseBad  = new Audio(SFX.bad);
-baseGood.preload = "auto";
-baseBad.preload  = "auto";
+let ac = null;
+let buffers = {};
+let audioReady = false;
 
-let audioUnlocked = false;
-async function unlockAudioOnce() {
-  if (audioUnlocked) return;
-  try { baseGood.muted = true; await baseGood.play(); baseGood.pause(); baseGood.currentTime = 0; baseGood.muted = false; } catch {}
-  try { baseBad.muted  = true; await baseBad.play();  baseBad.pause();  baseBad.currentTime  = 0; baseBad.muted  = false; } catch {}
-  audioUnlocked = true;
+// decode helper
+async function loadBuffer(url) {
+  const res = await fetch(url, { cache: "force-cache" });
+  const arr = await res.arrayBuffer();
+  return await ac.decodeAudioData(arr);
 }
-// Satisfy iOS “user gesture” requirement
-["pointerdown","touchstart","click","keydown"].forEach(evt => {
-  window.addEventListener(evt, unlockAudioOnce, { once: true, passive: true });
+
+// unlock + preload on first gesture
+async function initSfx() {
+  if (audioReady) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    // some iOS versions need an explicit resume on gesture
+    if (ac.state === "suspended") await ac.resume();
+
+    // prime tiny silent buffer to satisfy the gesture requirement
+    const silent = ac.createBuffer(1, 1, 22050);
+    const src = ac.createBufferSource(); src.buffer = silent;
+    src.connect(ac.destination); src.start(0);
+
+    // now load the real clips
+    const [good, bad] = await Promise.all([
+      loadBuffer(SFX.good),
+      loadBuffer(SFX.bad),
+    ]);
+    buffers = { good, bad };
+    audioReady = true;
+  } catch (e) {
+    // Fallback: mark as not ready; we'll silently no-op playSfx
+    console.warn("SFX init failed", e);
+  }
+}
+
+// attach once on any gesture
+["pointerdown","touchstart","click","keydown"].forEach(ev => {
+  window.addEventListener(ev, initSfx, { once: true, passive: true });
 });
 
 function playSfx(kind) {
-  if (!audioUnlocked) return; // respect autoplay policy until unlocked
+  if (!audioReady || !buffers[kind]) return;
   try {
-    const src = kind === "good" ? SFX.good : SFX.bad;
-    const a = new Audio(src);
-    a.play().catch(()=>{});
+    const src = ac.createBufferSource();
+    src.buffer = buffers[kind];
+    src.connect(ac.destination);
+    src.start(0);
   } catch {}
 }
 
