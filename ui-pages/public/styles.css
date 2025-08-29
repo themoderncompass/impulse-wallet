@@ -141,3 +141,69 @@ th, td {
     max-width: 100px; /* adjust until it feels right on iPhone */
   }
 }
+/* Instructions button (floating) */
+.instructions-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  background: #2e3a87;
+  color: #fff;
+  border: 1px solid #24306d;
+  border-radius: 999px;
+  padding: .6rem .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.instructions-btn:focus {
+  outline: 2px solid #99a3ff;
+  outline-offset: 2px;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(17,17,17,.45);
+  display: grid;
+  place-items: center;
+  z-index: 1100;
+}
+.modal[hidden] { display: none; }
+
+.modal-content {
+  background: #fff;
+  width: min(640px, 92vw);
+  max-height: 82vh;
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid #e6e7eb;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.modal-close {
+  appearance: none;
+  position: sticky;
+  top: 0;
+  float: right;
+  margin-left: auto;
+  background: #fff;
+  border: 1px solid #cfd3db;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+}
+.modal-close:focus {
+  outline: 2px solid #99a3ff;
+  outline-offset: 2px;
+}
+
+.modal-body { margin-top: .25rem; }
+.modal-body ol, .modal-body ul { margin: .5rem 0 .25rem 1.25rem; }
+.modal-body h3 { margin-top: 1rem; }
