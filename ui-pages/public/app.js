@@ -518,12 +518,14 @@ async function initWeeklyFocusUI() {
 const _createRoom = createRoom;
 createRoom = async function wrappedCreateRoom() {
   await _createRoom();
+  document.getElementById("focus-open")?.classList.remove("hidden");
   await initWeeklyFocusUI();
 };
 
 const _doJoin = doJoin;
 doJoin = async function wrappedDoJoin() {
   await _doJoin();
+  document.getElementById("focus-open")?.classList.remove("hidden");
   await initWeeklyFocusUI();
 };
 
