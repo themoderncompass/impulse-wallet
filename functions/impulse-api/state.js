@@ -1,3 +1,4 @@
+// functions/impulse-api/state.js
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -5,24 +6,31 @@ function json(body, status = 200) {
   });
 }
 
-// Make sure entries has the columns we’ll read/write (non-destructive ADD COLUMNs)
+async function getEntriesCols(env) {
+  const info = await env.DB.prepare(`PRAGMA table_info(entries)`).all();
+  const cols = (info.results || []).reduce((m, r) => {
+    m[r.name] = { notnull: !!r.notnull, pk: !!r.pk, type: r.type };
+    return m;
+  }, {});
+  return cols;
+}
+
+// Create table if missing and add common columns we depend on
 async function ensureEntriesShape(env) {
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT
-      -- other columns added below if missing
     )
   `).run();
 
-  // Add columns if missing (SQLite allows ADD COLUMN without touching existing data)
-  const cols = await env.DB.prepare(`PRAGMA table_info(entries)`).all();
-  const has = (name) => (cols.results || []).some(c => c.name === name);
+  const cols = await getEntriesCols(env);
 
-  if (!has("room_code"))   await env.DB.prepare(`ALTER TABLE entries ADD COLUMN room_code TEXT`).run();
-  if (!has("player"))      await env.DB.prepare(`ALTER TABLE entries ADD COLUMN player TEXT`).run();
-  if (!has("delta"))       await env.DB.prepare(`ALTER TABLE entries ADD COLUMN delta INTEGER DEFAULT 0`).run();
-  if (!has("label"))       await env.DB.prepare(`ALTER TABLE entries ADD COLUMN label TEXT`).run();
-  if (!has("created_at"))  await env.DB.prepare(`ALTER TABLE entries ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP`).run();
+  if (!cols.room_code)  await env.DB.prepare(`ALTER TABLE entries ADD COLUMN room_code TEXT`).run();
+  if (!cols.room_id)    await env.DB.prepare(`ALTER TABLE entries ADD COLUMN room_id TEXT`).run(); // tolerate legacy schemas
+  if (!cols.player)     await env.DB.prepare(`ALTER TABLE entries ADD COLUMN player TEXT`).run();
+  if (!cols.delta)      await env.DB.prepare(`ALTER TABLE entries ADD COLUMN delta INTEGER DEFAULT 0`).run();
+  if (!cols.label)      await env.DB.prepare(`ALTER TABLE entries ADD COLUMN label TEXT`).run();
+  if (!cols.created_at) await env.DB.prepare(`ALTER TABLE entries ADD COLUMN created_at TEXT DEFAULT CURRENT_TIMESTAMP`).run();
 }
 
 // GET /impulse-api/state?roomCode=ABCDE
@@ -35,9 +43,9 @@ export const onRequestGet = async ({ request, env }) => {
 
     const rows = await env.DB
       .prepare(
-        "SELECT player, delta, label, created_at FROM entries WHERE room_code = ? ORDER BY created_at ASC"
+        "SELECT player, delta, label, created_at FROM entries WHERE room_code = ? OR room_id = ? ORDER BY created_at ASC"
       )
-      .bind(roomCode)
+      .bind(roomCode, roomCode)
       .all();
 
     const history = rows.results || [];
@@ -58,12 +66,23 @@ export const onRequestPost = async ({ request, env }) => {
 
     await ensureEntriesShape(env);
 
-    await env.DB
-      .prepare(
-        "INSERT INTO entries (room_code, player, delta, label, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)"
-      )
-      .bind(roomCode, entry.player ?? null, entry.delta, entry.label ?? null)
-      .run();
+    // Build an INSERT that satisfies whichever columns exist (including NOT NULL room_id)
+    const cols = await getEntriesCols(env);
+    const fields = [];
+    const binds = [];
+
+    // set both if present
+    if (cols.room_code) { fields.push("room_code"); binds.push(roomCode); }
+    if (cols.room_id)   { fields.push("room_id");   binds.push(roomCode); }
+
+    fields.push("player");     binds.push(entry.player ?? null);
+    fields.push("delta");      binds.push(entry.delta);
+    fields.push("label");      binds.push(entry.label ?? null);
+
+    const placeholders = fields.map(() => "?").join(", ");
+    const sql = `INSERT INTO entries (${fields.join(", ")}, created_at) VALUES (${placeholders}, CURRENT_TIMESTAMP)`;
+
+    await env.DB.prepare(sql).bind(...binds).run();
 
     return json({ ok: true });
   } catch (e) {
