@@ -313,3 +313,227 @@ el.csv?.addEventListener("click", exportCSV);
 })();
 // --- background refresh ---
 setInterval(() => { refresh(); }, 5000);
+// ===== Weekly Focus (per-user, per-week; locks until Monday 12:01 AM) =====
+
+// DOM hooks (optional elements; code no-ops if missing)
+const focusEl = {
+  open:  document.getElementById("focus-open"),
+  modal: document.getElementById("focus-modal"),
+  close: document.getElementById("focus-close"),
+  form:  document.getElementById("focus-form"),
+  error: document.getElementById("focus-error"),
+  chips: document.getElementById("focus-chips"),
+  addCustom: document.getElementById("focus-add-custom"),
+  customInput: document.getElementById("focus-custom-input"),
+};
+
+// Compute Monday boundary at 12:01 AM local; returns "YYYY-MM-DD"
+function getWeekKeyLocal(now = new Date()) {
+  const d = new Date(now);
+  const day = d.getDay(); // 0 Sun..6 Sat
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  d.setHours(0, 1, 0, 0); // 12:01 AM
+  d.setDate(d.getDate() + diffToMonday);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+async function focusApiGet(roomCode, player) {
+  const weekKey = getWeekKeyLocal();
+  const url = `${API_BASE}/focus?roomCode=${encodeURIComponent(roomCode)}&player=${encodeURIComponent(player || "")}&weekKey=${weekKey}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Focus load failed: ${r.status}`);
+  return r.json(); // { roomCode, player, playerId, weekKey, areas, locked }
+}
+
+async function focusApiPost(roomCode, player, areas) {
+  const weekKey = getWeekKeyLocal();
+  const r = await fetch(`${API_BASE}/focus`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ roomCode, player, weekKey, areas }),
+  });
+  if (r.status === 409) throw new Error("Weekly focus already set");
+  if (!r.ok) throw new Error(`Focus save failed: ${r.status}`);
+  return r.json(); // { locked:true, areas:[...] }
+}
+
+// Render chips in header
+function renderFocusChips(areas) {
+  if (!focusEl.chips) return;
+  focusEl.chips.innerHTML = "";
+  if (!areas || areas.length === 0) return;
+  for (const a of areas) {
+    const span = document.createElement("span");
+    span.className = "chip";
+    span.textContent = a;
+    focusEl.chips.appendChild(span);
+  }
+}
+
+// Sync form checkboxes with current areas
+function hydrateFocusForm(areas) {
+  if (!focusEl.form) return;
+  // Uncheck all
+  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach(i => i.checked = false);
+
+  // Ensure any saved custom options exist as checkboxes
+  const grid = focusEl.form.querySelector(".focus-grid") || focusEl.form;
+  for (const a of areas || []) {
+    let box = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]')).find(i => i.value === a);
+    if (!box) {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = "focusArea";
+      input.value = a;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(" " + a));
+      grid.appendChild(label);
+      box = input;
+    }
+    box.checked = true;
+  }
+}
+
+// Enable/disable UI based on lock
+function setFocusLockedUI(locked, areas) {
+  if (!focusEl.form) return;
+  const controls = focusEl.form.querySelectorAll("input, button, select, textarea");
+  controls.forEach(elm => elm.disabled = !!locked);
+  if (focusEl.error) {
+    focusEl.error.textContent = locked
+      ? "Locked for this week. Resets Monday at 12:01 AM."
+      : "Choose 2–3 areas. These will lock for the week.";
+  }
+  renderFocusChips(areas);
+}
+
+// Helpers for selection state and limit
+function getSelectedFocusAreas() {
+  if (!focusEl.form) return [];
+  return Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]:checked'))
+    .map(i => i.value.trim());
+}
+function enforceFocusLimit() {
+  if (!focusEl.form || !focusEl.error) return;
+  const n = getSelectedFocusAreas().length;
+  const boxes = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]'));
+  const disable = n >= 3;
+  boxes.forEach(b => { if (!b.checked) b.disabled = disable; });
+  if (n < 2) focusEl.error.textContent = "Choose at least 2 areas.";
+  else if (n > 3) focusEl.error.textContent = "Limit is 3 areas.";
+  else focusEl.error.textContent = "";
+}
+
+// Public init called after you know roomCode + displayName
+async function initWeeklyFocusUI() {
+  // if elements not present, skip silently
+  if (!focusEl.form || !roomCode) return;
+
+  try {
+    const data = await focusApiGet(roomCode, displayName);
+    hydrateFocusForm(data.areas || []);
+    setFocusLockedUI(!!data.locked, data.areas || []);
+    enforceFocusLimit();
+  } catch (e) {
+    // non-fatal for the rest of the app
+    console.warn("Weekly Focus init failed:", e);
+  }
+}
+
+// Modal wiring (mirrors your Instructions modal pattern)
+(function focusModalWiring() {
+  const { open, modal, close, form, addCustom, customInput } = focusEl;
+  if (!open || !modal || !close || !form) return;
+
+  let lastFocus = null;
+  function openModal() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    modal.querySelector(".modal-content")?.focus();
+    document.addEventListener("keydown", onKey);
+    // Refresh state when opening, in case week moved or user reloaded
+    initWeeklyFocusUI();
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.removeEventListener("keydown", onKey);
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+  }
+  function onKey(e) {
+    if (e.key === "Escape") closeModal();
+  }
+
+  open.addEventListener("click", openModal);
+  close.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+  // Form interactions
+  form.addEventListener("change", (e) => {
+    if (e.target && e.target.name === "focusArea") enforceFocusLimit();
+  });
+
+  // Optional: add custom focus area chip to the checklist
+  if (addCustom && customInput) {
+    addCustom.addEventListener("click", () => {
+      const v = (customInput.value || "").trim();
+      if (!v) return;
+      const grid = form.querySelector(".focus-grid") || form;
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = "focusArea";
+      input.value = v;
+      label.appendChild(input);
+      label.appendChild(document.createTextNode(" " + v));
+      grid.appendChild(label);
+      input.checked = true;
+      customInput.value = "";
+      enforceFocusLimit();
+    });
+  }
+
+  // Save -> lock
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const chosen = getSelectedFocusAreas();
+    if (chosen.length < 2 || chosen.length > 3) { enforceFocusLimit(); return; }
+    try {
+      const res = await focusApiPost(roomCode, displayName, chosen);
+      setFocusLockedUI(!!res.locked, res.areas || []);
+      closeModal();
+      show("Weekly Focus locked");
+    } catch (err) {
+      if (focusEl.error) {
+        focusEl.error.textContent = err.message || "Failed to save focus";
+      }
+    }
+  });
+})();
+
+// Call initWeeklyFocusUI after join/create so UI shows current lock state
+const _createRoom = createRoom;
+createRoom = async function wrappedCreateRoom() {
+  await _createRoom();
+  await initWeeklyFocusUI();
+};
+
+const _doJoin = doJoin;
+doJoin = async function wrappedDoJoin() {
+  await _doJoin();
+  await initWeeklyFocusUI();
+};
+
+// Optional: when the week rolls over while app is open, refresh chips without reload
+setInterval(() => {
+  // If the computed weekKey changed since last call, reload focus state
+  const wk = getWeekKeyLocal();
+  if (!window.__lastWeekKey) window.__lastWeekKey = wk;
+  if (window.__lastWeekKey !== wk) {
+    window.__lastWeekKey = wk;
+    initWeeklyFocusUI(); // will show unlocked state for the new week
+  }
+}, 60 * 1000); // check once per minute
