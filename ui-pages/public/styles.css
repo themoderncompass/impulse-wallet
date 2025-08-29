@@ -172,6 +172,7 @@ th, td {
   width: min(640px, 92vw);
   max-height: 82vh;
   overflow: auto;
+   -webkit-overflow-scrolling: touch;
   border-radius: 14px;
   border: 1px solid #e6e7eb;
   box-shadow: 0 10px 30px rgba(0,0,0,.18);
