@@ -15,8 +15,10 @@ body {
 
 .header {
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  flex-direction: column;
+  align-items: center; /* center text under logo */
+  text-align: center;
+  gap: .5rem;
   margin-bottom: 1rem;
 }
 
@@ -127,7 +129,7 @@ th, td {
   .controls { flex-direction: column }
 }
 
-/* --- Added for centered app logo --- */
+/* Centered app logo */
 .logo-wrapper {
   display: flex;
   justify-content: center;
@@ -135,6 +137,13 @@ th, td {
 }
 
 .app-logo {
-  max-width: 160px; /* adjust size as needed */
+  max-width: 160px; /* desktop/tablet size */
   height: auto;
+}
+
+/* On smaller screens, shrink further */
+@media (max-width: 640px) {
+  .app-logo {
+    max-width: 100px; /* adjust until it feels right on iPhone */
+  }
 }
