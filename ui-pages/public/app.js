@@ -139,7 +139,46 @@ function show(msg, isLoss = false) {
   el.banner.classList.remove("hidden");
   setTimeout(() => el.banner.classList.add("hidden"), 2200);
 }
+// === Weekly window helpers (Monday 12:01 boundary is used for focus; here we just need week start at 00:00) ===
+function getWeekStartLocal(d = new Date()) {
+  const day = d.getDay(); // 0=Sun..6=Sat
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  const start = new Date(d);
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate() + diffToMonday);
+  return start;
+}
+function isInCurrentWeek(ts) {
+  const t = new Date(ts);
+  return t >= getWeekStartLocal();
+}
 
+// Compute per-player weekly balance and longest positive streak (deposits)
+// Assumes state.history is ascending by created_at (your API already returns ASC)
+function computeWeeklyStats(history) {
+  const byPlayer = new Map();
+  for (const r of history) {
+    if (!r.created_at || !isInCurrentWeek(r.created_at)) continue;
+
+    const name = r.player || "—";
+    let s = byPlayer.get(name);
+    if (!s) {
+      s = { balance: 0, currentStreak: 0, longestStreak: 0 };
+      byPlayer.set(name, s);
+    }
+
+    const delta = r.delta || 0;
+    s.balance += delta;
+
+    if (delta > 0) {
+      s.currentStreak += 1;
+      if (s.currentStreak > s.longestStreak) s.longestStreak = s.currentStreak;
+    } else if (delta < 0) {
+      s.currentStreak = 0; // any withdrawal breaks the streak
+    }
+  }
+  return byPlayer;
+}
 // --- state ---
 let roomCode = null;
 let displayName = "";
@@ -149,20 +188,23 @@ function paint(state) {
   // state: { ok, roomCode, balance, history:[{player,delta,label,created_at}] }
   const history = Array.isArray(state.history) ? state.history : [];
 
-  // Leaderboard by player total
-  const totals = {};
-  for (const r of history) {
-    const p = r.player || "—";
-    totals[p] = (totals[p] || 0) + (r.delta || 0);
-  }
-  el.board.innerHTML = "";
-  Object.entries(totals).sort((a, b) => b[1] - a[1]).forEach(([name, bal]) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${h(name)}</td><td>${bal}</td><td>—</td><td>—</td>`;
-    el.board.appendChild(tr);
-  });
+  // Weekly stats per player (balance + longest streak)
+  const stats = computeWeeklyStats(history);
 
-  // My history (latest first)
+  // Leaderboard (sorted by weekly balance)
+  el.board.innerHTML = "";
+  const rows = Array.from(stats.entries()).sort((a, b) => b[1].balance - a[1].balance);
+  for (const [name, s] of rows) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${h(name)}</td>
+      <td>${s.balance}</td>
+      <td>${s.longestStreak || 0}</td>
+    `;
+    el.board.appendChild(tr);
+  }
+
+  // My history (latest first) — unchanged
   el.mine.innerHTML = "";
   history.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
@@ -171,9 +213,10 @@ function paint(state) {
     el.mine.appendChild(tr);
   });
 
-  // Optional banner logic (simple milestones)
-  if (totals[displayName] >= 20) show("You hit +$20 this week. Keep going.");
-  if (totals[displayName] <= -20) show("You hit −$20 this week. Keep tracking.", true);
+  // Weekly milestone banners based on this week's totals only
+  const me = stats.get(displayName);
+  if (me && me.balance >= 20) show("You hit +$20 this week. Keep going.");
+  if (me && me.balance <= -20) show("You hit −$20 this week. Keep tracking.", true);
 }
 
 // --- data flows ---
