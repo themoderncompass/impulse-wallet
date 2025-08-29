@@ -16,7 +16,7 @@ body {
 .header {
   display: flex;
   flex-direction: column;
-  align-items: center; /* center text under logo */
+  align-items: center; /* center logo and text */
   text-align: center;
   gap: .5rem;
   margin-bottom: 1rem;
@@ -130,12 +130,6 @@ th, td {
 }
 
 /* Centered app logo */
-.logo-wrapper {
-  display: flex;
-  justify-content: center;
-  margin: 1rem 0;
-}
-
 .app-logo {
   max-width: 160px; /* desktop/tablet size */
   height: auto;
