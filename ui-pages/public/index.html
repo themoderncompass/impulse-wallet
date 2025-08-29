@@ -13,37 +13,26 @@
   <main class="container">
 
 <header class="header">
-  <img src="/icons/icon-512.png" alt="Impulse Wallet" class="app-logo">
-  <h1>Impulse Wallet</h1>
+  <div class="header-left">
+    <img src="/icons/icon-512.png" alt="Impulse Wallet" class="app-logo">
+    <h1>Impulse Wallet</h1>
+  </div>
+  <button id="instructions-open" class="instructions-btn" aria-haspopup="dialog" aria-controls="instructions-modal" aria-label="Open instructions">
+    Instructions
+  </button>
   <p class="sub">Every resisted impulse deposits $1. No lockout at ±20 — keep tracking.</p>
 </header>
-<!-- Instructions button (floating) -->
-<button id="instructions-open" class="instructions-btn" aria-haspopup="dialog" aria-controls="instructions-modal" aria-label="Open instructions">
-  Instructions
-</button>
 
-<!-- Instructions modal -->
+<!-- Instructions modal (same as before) -->
 <div id="instructions-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title" hidden>
   <div class="modal-content" role="document" tabindex="-1">
     <button id="instructions-close" class="modal-close" aria-label="Close instructions">×</button>
     <h2 id="instructions-title">Instructions</h2>
     <div class="modal-body">
-      <ol>
-        <li><strong>Create or join</strong> a room with a code you share with your group.</li>
-        <li><strong>Deposit +$1</strong> every time you resist an impulse; <strong>−$1</strong> when you don’t.</li>
-        <li>Use the optional label to tag the impulse (e.g., “late-night scroll”).</li>
-        <li><strong>Undo</strong> is available for 15 minutes after an entry.</li>
-        <li>The Leaderboard shows totals for this room; History lists your entries.</li>
-      </ol>
-      <h3>Tips</h3>
-      <ul>
-        <li>Keep your room code private if you want only invited people to log entries.</li>
-        <li>Sounds play on tap; turn off Silent mode on iPhone to hear them.</li>
-      </ul>
+      <!-- instruction text here -->
     </div>
   </div>
 </div>
-
 
 
     <section class="card">
