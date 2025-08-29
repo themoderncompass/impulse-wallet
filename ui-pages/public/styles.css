@@ -275,3 +275,32 @@ th, td {
 @media (max-width: 480px) {
   .focus-grid { grid-template-columns: 1fr; }
 }
+/* --- Fix Weekly Focus form layout (override global input rule) --- */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;           /* stop stretching to 100% */
+  padding: 0;            /* no text-field padding on checkboxes */
+  border: initial;
+  background: initial;
+  border-radius: 0;
+}
+
+/* Nice label layout for checkbox + text */
+.focus-grid label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border: 1px solid #e6e7eb;
+  border-radius: 10px;
+  background: #fafafb;
+  line-height: 1.2;
+}
+
+/* Keep the checkbox from expanding */
+.focus-grid input[type="checkbox"] {
+  flex: 0 0 auto;
+}
+
+/* Allow multi-word options to wrap inside the tile without escaping the grid */
+.focus-grid label { white-space: normal; }
