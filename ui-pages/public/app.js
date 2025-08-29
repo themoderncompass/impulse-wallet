@@ -186,7 +186,6 @@ async function refresh() {
     console.error("Refresh failed:", e);
   }
 }
-
 async function createRoom() {
   try {
     displayName = (el.name.value || "").trim();
@@ -200,6 +199,11 @@ async function createRoom() {
     el.room.value = roomCode;
     $(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
+
+    // NEW: reveal Weekly Focus and init it
+    document.getElementById("focus-open")?.classList.remove("hidden");
+    await initWeeklyFocusUI();
+
     await refresh();
     show(`Room ${roomCode} ready`);
   } catch (e) {
@@ -217,6 +221,11 @@ async function doJoin() {
     await api(`/room?roomCode=${encodeURIComponent(roomCode)}`);
     $(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
+
+    // NEW: reveal Weekly Focus and init it
+    document.getElementById("focus-open")?.classList.remove("hidden");
+    await initWeeklyFocusUI();
+
     await refresh();
     show(`Joined ${roomCode}`);
   } catch (e) {
@@ -224,6 +233,7 @@ async function doJoin() {
     alert(`Join failed: ${e.message}`);
   }
 }
+
 
 async function submit(amount) {
   try {
