@@ -100,3 +100,46 @@ export const onRequestPost = async ({ request, env }) => {
     return json({ error: e?.message || String(e) }, 500);
   }
 };
+
+// DELETE /impulse-api/state?roomCode=ABCDE[&player=Josh]
+// Undo the most recent entry in this room (optionally scoped to player) if within 15 minutes
+export const onRequestDelete = async ({ request, env }) => {
+  function json(body, status = 200) {
+    return new Response(JSON.stringify(body), {
+      status, headers: { "content-type": "application/json" }
+    });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const roomCode = url.searchParams.get("roomCode");
+    const player = url.searchParams.get("player") || null;
+    if (!roomCode) return json({ error: "roomCode required" }, 400);
+
+    // Find latest entry for this room (and player if provided)
+    let sql = "SELECT id, created_at FROM entries WHERE room_code = ?";
+    const args = [roomCode];
+    if (player) { sql += " AND player = ?"; args.push(player); }
+    sql += " ORDER BY created_at DESC LIMIT 1";
+
+    const row = await env.DB.prepare(sql).bind(...args).first();
+    if (!row) return json({ error: "Nothing to undo" }, 404);
+
+    // Enforce 15-minute window
+    // SQLite CURRENT_TIMESTAMP is "YYYY-MM-DD HH:MM:SS". Interpret as UTC.
+    const parsed = Date.parse((row.created_at || "").replace(" ", "T") + "Z");
+    if (!Number.isFinite(parsed)) return json({ error: "Bad timestamp on last entry" }, 500);
+    const fifteen = 15 * 60 * 1000;
+    if (Date.now() - parsed > fifteen) {
+      return json({ error: "Undo window elapsed (15 min)" }, 400);
+    }
+
+    await env.DB.prepare("DELETE FROM entries WHERE id = ?").bind(row.id).run();
+    return json({ ok: true });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e?.message || String(e) }), {
+      status: 500, headers: { "content-type": "application/json" }
+    });
+  }
+};
+
