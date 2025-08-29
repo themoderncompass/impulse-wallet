@@ -2,60 +2,99 @@
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
 
-// --- SFX via Web Audio (iOS-friendly) ---
+// --- SFX (iOS-hardened): Web Audio + instant synth fallback ---
 const SFX = { good: "/sfx/good.mp3", bad: "/sfx/bad.mp3" };
 
 let ac = null;
-let buffers = {};
-let audioReady = false;
+let buffers = { good: null, bad: null };
+let loading = false;
 
-// decode helper
-async function loadBuffer(url) {
-  const res = await fetch(url, { cache: "force-cache" });
-  const arr = await res.arrayBuffer();
-  return await ac.decodeAudioData(arr);
+// Create / resume context
+async function ensureCtx() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: "interactive" });
+  if (ac.state !== "running") {
+    try { await ac.resume(); } catch {}
+  }
+  return ac && ac.state === "running";
 }
 
-// unlock + preload on first gesture
-async function initSfx() {
-  if (audioReady) return;
+// Quick synth blip (works even while MP3s are still loading)
+function synthClick(kind = "good") {
   try {
-    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-    // some iOS versions need an explicit resume on gesture
-    if (ac.state === "suspended") await ac.resume();
+    if (!ac) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
 
-    // prime tiny silent buffer to satisfy the gesture requirement
-    const silent = ac.createBuffer(1, 1, 22050);
-    const src = ac.createBufferSource(); src.buffer = silent;
-    src.connect(ac.destination); src.start(0);
+    // good = higher, bad = lower
+    const f0 = kind === "good" ? 880 : 440;
+    osc.frequency.setValueAtTime(f0, now);
 
-    // now load the real clips
-    const [good, bad] = await Promise.all([
-      loadBuffer(SFX.good),
-      loadBuffer(SFX.bad),
-    ]);
-    buffers = { good, bad };
-    audioReady = true;
+    // short envelope (pop-free)
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.4, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+  } catch {}
+}
+
+// Lazy-load and decode MP3s after first gesture (doesn’t block clicks)
+async function loadBuffers() {
+  if (loading || (buffers.good && buffers.bad)) return;
+  loading = true;
+  try {
+    const [g, b] = await Promise.all(
+      [SFX.good, SFX.bad].map(async (url) => {
+        const res = await fetch(url, { cache: "force-cache" });
+        const arr = await res.arrayBuffer();
+        // Some iOS require decodeAudioData callback form; both supported:
+        return await new Promise((resolve, reject) => {
+          ac.decodeAudioData(arr, resolve, reject);
+        });
+      })
+    );
+    buffers.good = g; buffers.bad = b;
   } catch (e) {
-    // Fallback: mark as not ready; we'll silently no-op playSfx
-    console.warn("SFX init failed", e);
+    // decoding failed; synth fallback will keep working
+    // console.warn("SFX decode failed", e);
+  } finally {
+    loading = false;
   }
 }
 
-// attach once on any gesture
-["pointerdown","touchstart","click","keydown"].forEach(ev => {
-  window.addEventListener(ev, initSfx, { once: true, passive: true });
-});
+// Public play: resume ctx, fire synth immediately, then prefer decoded buffer if ready
+async function playSfx(kind) {
+  const ok = await ensureCtx();
 
-function playSfx(kind) {
-  if (!audioReady || !buffers[kind]) return;
-  try {
-    const src = ac.createBufferSource();
-    src.buffer = buffers[kind];
-    src.connect(ac.destination);
-    src.start(0);
-  } catch {}
+  // Always give instant feedback
+  synthClick(kind);
+
+  // If we have decoded buffers, layer the real sample (tight envelope so it feels like one sound)
+  if (ok && buffers[kind]) {
+    try {
+      const src = ac.createBufferSource();
+      const g = ac.createGain();
+      src.buffer = buffers[kind];
+      // tiny gain to avoid clipping when layered with synth
+      g.gain.setValueAtTime(0.6, ac.currentTime);
+      src.connect(g); g.connect(ac.destination);
+      src.start();
+    } catch {}
+  } else {
+    // kick off decode in the background
+    loadBuffers();
+  }
 }
+
+// Unlock + start loading on first gesture
+["pointerdown","touchstart","click","keydown"].forEach(evt => {
+  window.addEventListener(evt, async () => {
+    if (await ensureCtx()) loadBuffers();
+  }, { once: true, passive: true });
+});
 
 
 // --- dom refs ---
