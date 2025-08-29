@@ -1,10 +1,15 @@
-import { json } from "./_util";
+// Minimal JSON helper (avoid Response.json compatibility surprises)
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" }
+  });
+}
 
 // GET /impulse-api/room?roomCode=ABCDE
 export const onRequestGet = async ({ request, env }) => {
   try {
-    const url = new URL(request.url);
-    const roomCode = url.searchParams.get("roomCode");
+    const roomCode = new URL(request.url).searchParams.get("roomCode");
     if (!roomCode) return json({ error: "roomCode required" }, 400);
 
     const row = await env.DB
@@ -13,8 +18,6 @@ export const onRequestGet = async ({ request, env }) => {
       .first();
 
     if (!row) return json({ error: "Room not found" }, 404);
-
-    // Normalize response to { room: { code, created_at } }
     return json({ ok: true, room: { code: row.room_code, created_at: row.created_at } });
   } catch (e) {
     return json({ error: e?.message || String(e) }, 500);
@@ -27,7 +30,7 @@ export const onRequestPost = async ({ request, env }) => {
     const { roomCode, displayName } = await request.json().catch(() => ({}));
     if (!roomCode) return json({ error: "roomCode required" }, 400);
 
-    // Ensure table exists (optional safety)
+    // Your schema: rooms(room_id, room_code, tz, created_at)
     await env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS rooms (
         room_id   TEXT PRIMARY KEY,
@@ -37,25 +40,29 @@ export const onRequestPost = async ({ request, env }) => {
       )
     `).run();
 
-    // Upsert a room: use roomCode as room_id as well (fits TEXT PK)
+    // Upsert room using code for both id and code (idempotent)
     await env.DB
-      .prepare("INSERT OR IGNORE INTO rooms (room_id, room_code, tz, created_at) VALUES (?, ?, 'America/Chicago', CURRENT_TIMESTAMP)")
+      .prepare("INSERT OR IGNORE INTO rooms (room_id, room_code) VALUES (?, ?)")
       .bind(roomCode, roomCode)
       .run();
 
-    // Optional: record player if provided
+    // players table per your schema: players(player_id, room_id, display_name, created_at, room_code)
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS players (
+        player_id   TEXT PRIMARY KEY,
+        room_id     TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        room_code   TEXT
+      )
+    `).run();
+
     if (displayName) {
-      await env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS players (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          room_code TEXT NOT NULL,
-          name TEXT NOT NULL,
-          created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-      `).run();
+      // Use a stable player_id = roomCode:displayName (simple de-dupe)
+      const pid = `${roomCode}:${displayName}`;
       await env.DB
-        .prepare("INSERT OR IGNORE INTO players (room_code, name) VALUES (?, ?)")
-        .bind(roomCode, displayName)
+        .prepare("INSERT OR IGNORE INTO players (player_id, room_id, display_name, room_code) VALUES (?, ?, ?, ?)")
+        .bind(pid, roomCode, displayName, roomCode)
         .run();
     }
 
