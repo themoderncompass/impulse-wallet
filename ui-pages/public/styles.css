@@ -213,3 +213,65 @@ th, td {
   .app-logo { width: 120px; }   /* ensure it’s not tiny on big monitors */
   h1 { font-size: 1.75rem; }
 }
+/* ---------- Weekly Focus UI ---------- */
+
+/* Right-side header action group (Weekly Focus + Instructions) */
+.header-right {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+/* Chips that show the locked weekly focus */
+.focus-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin: .75rem 0;
+}
+.focus-chips .chip {
+  padding: .25rem .6rem;
+  border-radius: 999px;
+  background: #eef2ff;   /* soft indigo */
+  color: #1f2937;        /* slate-800 */
+  font-size: .85rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Focus picker layout inside the modal */
+.focus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+  margin: 1rem 0;
+}
+.focus-grid label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .6rem;
+  border: 1px solid #e6e7eb;
+  border-radius: 10px;
+  background: #fafafb;
+}
+
+/* Optional custom item row */
+.focus-custom {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  margin: .5rem 0 1rem;
+}
+
+.muted { color: #6b7280; font-size: .95rem; }
+
+.error { color: #b91c1c; font-size: .9rem; }
+
+/* Make the Weekly Focus button look like your Instructions button */
+#focus-open.instructions-btn { /* inherits from .instructions-btn */ }
+
+/* Small-screen nudge */
+@media (max-width: 480px) {
+  .focus-grid { grid-template-columns: 1fr; }
+}
