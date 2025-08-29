@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Impulse Wallet</title>
- <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=4">
   <link rel="icon" href="/favicon.ico">
-<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
-<link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
 </head>
 <body>
   <main class="container">
@@ -17,14 +17,27 @@
     <img src="/icons/icon-512.png" alt="Impulse Wallet" class="app-logo">
     <h1>Impulse Wallet</h1>
   </div>
-  <button id="instructions-open"
-          class="instructions-btn"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="instructions-modal"
-          aria-label="Open instructions">
-    Instructions
-  </button>
+
+  <!-- Header actions: Weekly Focus + Instructions -->
+  <div class="header-right">
+    <button id="focus-open"
+            class="instructions-btn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="focus-modal"
+            aria-label="Open weekly focus">
+      Weekly Focus
+    </button>
+
+    <button id="instructions-open"
+            class="instructions-btn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="instructions-modal"
+            aria-label="Open instructions">
+      Instructions
+    </button>
+  </div>
 </header>
 
 <!-- Instructions modal -->
@@ -38,6 +51,38 @@
   </div>
 </div>
 
+<!-- Weekly Focus modal -->
+<div id="focus-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="focus-title" hidden>
+  <div class="modal-content" role="document" tabindex="-1">
+    <button id="focus-close" class="modal-close" type="button" aria-label="Close weekly focus">×</button>
+    <h2 id="focus-title">Choose your 2–3 focus areas</h2>
+    <p class="muted">These lock for the week and reset Monday at 12:01 AM.</p>
+
+    <form id="focus-form">
+      <fieldset class="focus-grid">
+        <label><input type="checkbox" name="focusArea" value="Nutrition"> Nutrition</label>
+        <label><input type="checkbox" name="focusArea" value="Sleep Hygiene"> Sleep Hygiene</label>
+        <label><input type="checkbox" name="focusArea" value="Scrolling"> Scrolling</label>
+        <label><input type="checkbox" name="focusArea" value="Sugar"> Sugar</label>
+        <label><input type="checkbox" name="focusArea" value="Spending"> Spending</label>
+        <label><input type="checkbox" name="focusArea" value="Alcohol"> Alcohol</label>
+        <label><input type="checkbox" name="focusArea" value="Procrastination"> Procrastination</label>
+        <label><input type="checkbox" name="focusArea" value="Words to Family"> Words to Family</label>
+      </fieldset>
+
+      <!-- Optional custom area -->
+      <div class="focus-custom">
+        <input id="focus-custom-input" type="text" placeholder="Add a custom area">
+        <button type="button" id="focus-add-custom">Add</button>
+      </div>
+
+      <div class="focus-actions">
+        <span id="focus-error" class="error" aria-live="polite"></span>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
 
     <section class="card">
       <div class="join">
@@ -60,6 +105,9 @@
           <span id="week"></span>
           <button id="undo" class="secondary">Undo last (15 min)</button>
         </div>
+
+        <!-- Weekly Focus chips appear here once set -->
+        <div id="focus-chips" class="focus-chips" aria-label="Weekly focus areas"></div>
 
         <div class="controls">
           <input id="impulse" placeholder="Optional impulse label" />
