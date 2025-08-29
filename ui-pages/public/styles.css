@@ -13,13 +13,13 @@ body {
   padding: 0 1rem;
 }
 
-/* Header: logo + title left, Instructions button right; tagline below */
+/* Header: logo + title left, Instructions button right */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: .75rem;
-  flex-wrap: wrap;           /* mobile-safe: wraps items */
+  flex-wrap: wrap;           /* mobile-safe */
   margin-bottom: 1rem;
 }
 
@@ -29,17 +29,19 @@ body {
   gap: .75rem;
 }
 
+/* App logo — responsive: small on phones, scales up on desktop */
 .app-logo {
-  max-width: 48px;           /* header logo size */
+  width: clamp(56px, 9vw, 120px); /* min 56px, grow with viewport, cap at 120px */
   height: auto;
+  flex: 0 0 auto;
 }
 
 h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem); /* scale title a bit too */
 }
 
-.sub {
+.sub { /* keep if you ever re-enable tagline */
   width: 100%;
   text-align: center;
   color: #555;
@@ -201,10 +203,12 @@ th, td {
 .modal-body ol, .modal-body ul { margin: .5rem 0 .25rem 1.25rem; }
 .modal-body h3 { margin-top: 1rem; }
 
-/* Responsive tweaks */
-@media (max-width: 640px) {
-  .join { grid-template-columns: 1fr }
-  .controls { flex-direction: column }
-  .app-logo { max-width: 40px }           /* smaller logo on phones */
-  .instructions-btn { padding: .45rem .6rem }
+/* Extra responsive nudges */
+@media (max-width: 480px) {
+  .instructions-btn { padding: .45rem .6rem; }
+}
+
+@media (min-width: 1200px) {
+  .app-logo { width: 120px; }   /* ensure it’s not tiny on big monitors */
+  h1 { font-size: 1.75rem; }
 }
