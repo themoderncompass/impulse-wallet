@@ -284,6 +284,32 @@ el.minus?.addEventListener("click", () => submit(-1));
 el.undo?.addEventListener("click", undoLast);
 el.months?.addEventListener("change", loadHistory);
 el.csv?.addEventListener("click", exportCSV);
+// Instructions modal wiring
+(function instructionsModal() {
+  const openBtn = document.getElementById('instructions-open');
+  const modal   = document.getElementById('instructions-modal');
+  const closeBtn= document.getElementById('instructions-close');
+  if (!openBtn || !modal || !closeBtn) return;
 
+  let lastFocus = null;
+  function open() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    modal.querySelector('.modal-content')?.focus();
+    document.addEventListener('keydown', onKey);
+  }
+  function close() {
+    modal.hidden = true;
+    document.removeEventListener('keydown', onKey);
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  function onKey(e) {
+    if (e.key === 'Escape') close();
+  }
+
+  openBtn.addEventListener('click', open);
+  closeBtn.addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+})();
 // --- background refresh ---
 setInterval(() => { refresh(); }, 5000);
