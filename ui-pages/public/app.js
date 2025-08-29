@@ -162,8 +162,8 @@ async function submit(amount) {
 async function undoLast() {
   try {
     if (!roomCode) throw new Error("Join or create a room first");
-    // Requires DELETE handler in /functions/impulse-api/state.js (optional)
-    await api(`/state?roomCode=${encodeURIComponent(roomCode)}`, { method: "DELETE" });
+    const player = (document.querySelector('#name')?.value || '').trim();
+    await api(`/state?roomCode=${encodeURIComponent(roomCode)}&player=${encodeURIComponent(player)}`, { method: "DELETE" });
     await refresh();
   } catch (e) {
     console.error(e);
