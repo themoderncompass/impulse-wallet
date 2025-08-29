@@ -78,7 +78,7 @@ function paint(state) {
   el.mine.innerHTML = "";
   history.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
-    const when = row.created_at ? new Date(row.created_at).toLocaleString("en-US", { timeZone: "America/Chicago" }) : "";
+    const when = row.created_at ? new Date(row.created_at).toLocaleString("en-US") : "";
     tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
     el.mine.appendChild(tr);
   });
