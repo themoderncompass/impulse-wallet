@@ -191,8 +191,9 @@ th, td {
   width: 32px;
   height: 32px;
   font-size: 18px;
-  line-height: 30px;
-  text-align: center;
+  display: flex;             
+  align-items: center;        
+  justify-content: center;    
   cursor: pointer;
 }
 .modal-close:focus {
