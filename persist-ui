@@ -1,0 +1,77 @@
+import { getSession, saveSession, clearSession } from './persistence.js';
+
+const API_BASE = "/impulse-api";
+
+// Try automatic rejoin if we have a saved roomCode + joinToken
+export async function tryAutoRejoin() {
+  const s = getSession();
+  if (!s?.roomCode || !s?.joinToken) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/rooms/${encodeURIComponent(s.roomCode)}/rejoin`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ joinToken: s.joinToken })
+    });
+    if (!res.ok) throw new Error('rejoin failed');
+    const data = await res.json();
+    if (!data?.ok) throw new Error('rejoin not ok');
+
+    // Success → navigate to your room UI
+    location.href = `/room.html?roomCode=${encodeURIComponent(s.roomCode)}`;
+    return true;
+  } catch {
+    clearSession();
+    return false;
+  }
+}
+
+// Show “You’re in room …” banner on create/join page
+export async function renderSessionBanner() {
+  const mount = document.getElementById('current-room-banner');
+  if (!mount) return;
+
+  const s = getSession();
+  if (!s?.roomCode) { mount.innerHTML = ''; return; }
+
+  const r = await fetch(`${API_BASE}/rooms/${encodeURIComponent(s.roomCode)}/exists`);
+  if (!r.ok) { clearSession(); mount.innerHTML = ''; return; }
+  const { exists } = await r.json();
+  if (!exists) { clearSession(); mount.innerHTML = ''; return; }
+
+  mount.innerHTML = `
+    <div class="iw-banner">
+      <span>You are currently in <strong>${s.roomCode}</strong></span>
+      <span class="spacer"></span>
+      <button id="iw-rejoin" class="btn">Rejoin</button>
+      <button id="iw-leave" class="btn btn-secondary">Leave</button>
+    </div>
+  `;
+
+  document.getElementById('iw-rejoin').onclick = () => {
+    location.href = `/room.html?roomCode=${encodeURIComponent(s.roomCode)}`;
+  };
+  document.getElementById('iw-leave').onclick = async () => {
+    try {
+      await fetch(`${API_BASE}/rooms/${encodeURIComponent(s.roomCode)}/leave`, { method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ joinToken: s.joinToken })
+      });
+    } catch {}
+    clearSession();
+    mount.innerHTML = '';
+  };
+}
+
+// Call these on the create/join page
+document.addEventListener('DOMContentLoaded', () => {
+  tryAutoRejoin().then(() => renderSessionBanner());
+});
+
+// Helper for your existing join/create success path
+export function onJoinedRoom(result) {
+  // must include { roomCode, joinToken, role? }
+  const { roomCode, joinToken, role } = result;
+  saveSession({ roomCode, joinToken, role });
+  location.href = `/room.html?roomCode=${encodeURIComponent(roomCode)}`;
+}

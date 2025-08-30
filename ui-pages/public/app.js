@@ -1,3 +1,6 @@
+import { onJoinedRoom } from './persist-ui.js';
+
+
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
@@ -234,21 +237,17 @@ async function createRoom() {
     displayName = (el.name.value || "").trim();
     const proposed = (el.room.value || "").trim().toUpperCase();
     const code = proposed || genCode();
-    await api("/room", {
+
+    // POST /impulse-api/room now mints a joinToken and returns it
+    const res = await api("/room", {
       method: "POST",
       body: JSON.stringify({ roomCode: code, displayName })
     });
-    roomCode = code;
-    el.room.value = roomCode;
-    $(".join")?.classList.add("hidden");
-    el.play.classList.remove("hidden");
 
-    // NEW: reveal Weekly Focus and init it
-    document.getElementById("focus-open")?.classList.remove("hidden");
-    await initWeeklyFocusUI();
+    // Save {roomCode, joinToken} and redirect to room.html
+    onJoinedRoom(res);
+    // onJoinedRoom() redirects; nothing below this line will run
 
-    await refresh();
-    show(`Room ${roomCode} ready`);
   } catch (e) {
     console.error(e);
     alert(`Create failed: ${e.message}`);
@@ -260,17 +259,20 @@ async function doJoin() {
     roomCode = (el.room.value || "").trim().toUpperCase();
     displayName = (el.name.value || "").trim();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
-    // Ensure room exists (GET /room)
+
+    // Verify room exists
     await api(`/room?roomCode=${encodeURIComponent(roomCode)}`);
-    $(".join")?.classList.add("hidden");
-    el.play.classList.remove("hidden");
 
-    // NEW: reveal Weekly Focus and init it
-    document.getElementById("focus-open")?.classList.remove("hidden");
-    await initWeeklyFocusUI();
+    // Mint a session token for this browser and get {roomCode, joinToken}
+    const res = await api("/room", {
+      method: "POST",
+      body: JSON.stringify({ roomCode, displayName })
+    });
 
-    await refresh();
-    show(`Joined ${roomCode}`);
+    // Save {roomCode, joinToken} and redirect to room.html
+    onJoinedRoom(res);
+    // onJoinedRoom() redirects; nothing below this line will run
+
   } catch (e) {
     console.error(e);
     alert(`Join failed: ${e.message}`);
