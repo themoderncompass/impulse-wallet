@@ -48,24 +48,48 @@ export const onRequestPost = async ({ request, env }) => {
       )
     `).run();
 
-    // upsert room
+    // session table for persistence
+    await env.DB.prepare(`
+      CREATE TABLE IF NOT EXISTS room_sessions (
+        join_token TEXT PRIMARY KEY,
+        room_code  TEXT NOT NULL,
+        role       TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')*1000)
+      )
+    `).run();
+
     await env.DB.prepare(
       "INSERT OR IGNORE INTO rooms (code) VALUES (?)"
     ).bind(roomCode).run();
 
-    // optional: register player
     if (displayName) {
       await env.DB.prepare(
         "INSERT OR IGNORE INTO players (room_code, name) VALUES (?, ?)"
       ).bind(roomCode, displayName).run();
     }
 
+    // mint a session token for this device/browser
+    const joinToken = crypto.randomUUID();
+    const ttlMs = 1000 * 60 * 60 * 12; // 12 hours
+    const role = "member";
+
+    await env.DB.prepare(`
+      INSERT INTO room_sessions (join_token, room_code, role, expires_at)
+      VALUES (?1, ?2, ?3, ?4)
+      ON CONFLICT(join_token) DO UPDATE SET
+        room_code = excluded.room_code,
+        role = excluded.role,
+        expires_at = excluded.expires_at
+    `).bind(joinToken, roomCode, role, Date.now() + ttlMs).run();
+
     const row = await env.DB
       .prepare("SELECT code, created_at FROM rooms WHERE code = ?")
       .bind(roomCode)
       .first();
 
-    return json({ ok: true, room: row });
+    // return joinToken + roomCode so client can persist
+    return json({ ok: true, room: row, roomCode, role, joinToken });
   } catch (e) {
     return json({ error: e?.message || String(e) }, 500);
   }

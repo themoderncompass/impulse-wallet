@@ -10,6 +10,8 @@
   <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png">
 </head>
 <body>
+  <!-- Near the top of <body> -->
+<div id="current-room-banner"></div>
   <main class="container">
 
 <header class="header">
@@ -171,6 +173,8 @@
       </div>
     </section>
   </main>
-  <script src="app.js"></script>
+<script type="module" src="/persistence.js"></script>
+<script type="module" src="/persist-ui.js"></script>
+<script type="module" src="/app.js"></script>
 </body>
 </html>
