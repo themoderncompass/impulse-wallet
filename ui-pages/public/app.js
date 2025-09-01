@@ -1,52 +1,65 @@
-
-// ===== Persistence (single-file, no modules) =====
-const IW_KEY = 'iw.session';
-
-function iwSaveSession({ roomCode, joinToken, role = 'member' }) {
-  try { localStorage.setItem(IW_KEY, JSON.stringify({ roomCode, joinToken, role, ts: Date.now() })); } catch {}
-}
-function iwGetSession() {
-  try { return JSON.parse(localStorage.getItem(IW_KEY)) || null; } catch { return null; }
-}
-function iwClearSession() {
-  try { localStorage.removeItem(IW_KEY); } catch {}
-}
-
-async function iwTryAutoRejoin() {
-  const s = iwGetSession();
-  if (!s?.roomCode || !s?.joinToken) return;
-  try {
-    const res = await fetch(`/impulse-api/rooms/${encodeURIComponent(s.roomCode)}/rejoin`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ joinToken: s.joinToken })
-    });
-    if (!res.ok) throw 0;
-    const data = await res.json();
-    if (!data?.ok) throw 0;
-    location.href = `/room.html?roomCode=${encodeURIComponent(s.roomCode)}`;
-  } catch {
-    iwClearSession();
-  }
-}
-
-// Try auto-rejoin from the home page
-document.addEventListener('DOMContentLoaded', () => {
-  const onHome = location.pathname.endsWith('/') || location.pathname.endsWith('/index.html');
-  if (onHome) iwTryAutoRejoin();
-});
-
-// Used by createRoom/doJoin success paths
-function onJoinedRoom(result) {
-  const { roomCode, joinToken, role } = result || {};
-  if (roomCode && joinToken) iwSaveSession({ roomCode, joinToken, role });
-  // Redirect either way so legacy behavior still works if token missing
-  location.href = `/room.html?roomCode=${encodeURIComponent(roomCode || '')}`;
-}
-
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
+
+// ===== Persistence (no modules, no server token) =====
+const IW_KEY = 'iw.session';
+
+function saveSession(roomCode, displayName) {
+  try { localStorage.setItem(IW_KEY, JSON.stringify({ roomCode, displayName, ts: Date.now() })); } catch {}
+}
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(IW_KEY)) || null; } catch { return null; }
+}
+function clearSession() { try { localStorage.removeItem(IW_KEY); } catch {} }
+
+// On page load, restore session and hydrate UI
+document.addEventListener('DOMContentLoaded', async () => {
+  const path = location.pathname;
+  const isHome = path.endsWith('/') || path.endsWith('/index.html');
+  const isRoom = path.endsWith('/room.html');
+  const params = new URLSearchParams(location.search);
+  const urlCode = params.get('roomCode');
+  const s = getSession(); // { roomCode, displayName } or null
+
+  if (isHome) {
+    // If a session exists, bring the user right back into their room
+    if (s?.roomCode) {
+      // Hydrate globals + inputs, reveal Play UI, then refresh
+      roomCode = s.roomCode;
+      displayName = s.displayName || '';
+      if (el.room) el.room.value = roomCode;
+      if (el.name) el.name.value = displayName;
+      document.querySelector('.join')?.classList.add('hidden');
+      el.play?.classList.remove('hidden');
+      document.getElementById('focus-open')?.classList.remove('hidden');
+      try { await initWeeklyFocusUI(); } catch {}
+      try { await refresh(); } catch {}
+    }
+    return;
+  }
+
+  if (isRoom) {
+    // If URL has the code, use it; else fall back to session or send home
+    if (urlCode) {
+      roomCode = urlCode;
+      // If we previously saved a displayName, hydrate it (not critical)
+      if (s?.displayName) displayName = s.displayName;
+      document.querySelector('.join')?.classList.add('hidden');
+      el.play?.classList.remove('hidden');
+      document.getElementById('focus-open')?.classList.remove('hidden');
+      try { await initWeeklyFocusUI(); } catch {}
+      try { await refresh(); } catch {}
+      return;
+    }
+    if (s?.roomCode) {
+      location.replace(`/room.html?roomCode=${encodeURIComponent(s.roomCode)}`);
+      return;
+    }
+    // No URL and no session → go home
+    location.replace(`/`);
+  }
+});
 
 // --- SFX (iOS-hardened): Web Audio + instant synth fallback ---
 const SFX = { good: "/sfx/good.mp3", bad: "/sfx/bad.mp3" };
@@ -105,7 +118,6 @@ async function loadBuffers() {
     buffers.good = g; buffers.bad = b;
   } catch (e) {
     // decoding failed; synth fallback will keep working
-    // console.warn("SFX decode failed", e);
   } finally {
     loading = false;
   }
@@ -118,19 +130,17 @@ async function playSfx(kind) {
   // Always give instant feedback
   synthClick(kind);
 
-  // If we have decoded buffers, layer the real sample (tight envelope so it feels like one sound)
+  // If we have decoded buffers, layer the real sample
   if (ok && buffers[kind]) {
     try {
       const src = ac.createBufferSource();
       const g = ac.createGain();
       src.buffer = buffers[kind];
-      // tiny gain to avoid clipping when layered with synth
       g.gain.setValueAtTime(0.6, ac.currentTime);
       src.connect(g); g.connect(ac.destination);
       src.start();
     } catch {}
   } else {
-    // kick off decode in the background
     loadBuffers();
   }
 }
@@ -141,7 +151,6 @@ async function playSfx(kind) {
     if (await ensureCtx()) loadBuffers();
   }, { once: true, passive: true });
 });
-
 
 // --- dom refs ---
 const $ = (sel) => document.querySelector(sel);
@@ -200,7 +209,6 @@ function isInCurrentWeek(ts) {
 }
 
 // Compute per-player weekly balance and longest positive streak (deposits)
-// Assumes state.history is ascending by created_at (your API already returns ASC)
 function computeWeeklyStats(history) {
   const byPlayer = new Map();
   for (const r of history) {
@@ -225,6 +233,7 @@ function computeWeeklyStats(history) {
   }
   return byPlayer;
 }
+
 // --- state ---
 let roomCode = null;
 let displayName = "";
@@ -250,7 +259,7 @@ function paint(state) {
     el.board.appendChild(tr);
   }
 
-  // My history (latest first) — unchanged
+  // My history (latest first)
   el.mine.innerHTML = "";
   history.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
@@ -281,16 +290,25 @@ async function createRoom() {
     const proposed = (el.room.value || "").trim().toUpperCase();
     const code = proposed || genCode();
 
-    // POST /impulse-api/room now mints a joinToken and returns it
-    const res = await api("/room", {
+    await api("/room", {
       method: "POST",
       body: JSON.stringify({ roomCode: code, displayName })
     });
 
-    // Save {roomCode, joinToken} and redirect to room.html
-    onJoinedRoom(res);
-    // onJoinedRoom() redirects; nothing below this line will run
+    // set state + persist for reloads
+    roomCode = code;
+    el.room.value = roomCode;
+    saveSession(roomCode, displayName);
 
+    // show play UI
+    document.querySelector(".join")?.classList.add("hidden");
+    el.play.classList.remove("hidden");
+
+    // Weekly Focus + state
+    document.getElementById("focus-open")?.classList.remove("hidden");
+    await initWeeklyFocusUI();
+    await refresh();
+    show(`Room ${roomCode} ready`);
   } catch (e) {
     console.error(e);
     alert(`Create failed: ${e.message}`);
@@ -303,25 +321,26 @@ async function doJoin() {
     displayName = (el.name.value || "").trim();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
 
-    // Verify room exists
+    // Ensure room exists (GET /room)
     await api(`/room?roomCode=${encodeURIComponent(roomCode)}`);
 
-    // Mint a session token for this browser and get {roomCode, joinToken}
-    const res = await api("/room", {
-      method: "POST",
-      body: JSON.stringify({ roomCode, displayName })
-    });
+    // persist for reloads
+    saveSession(roomCode, displayName);
 
-    // Save {roomCode, joinToken} and redirect to room.html
-    onJoinedRoom(res);
-    // onJoinedRoom() redirects; nothing below this line will run
+    // show play UI
+    document.querySelector(".join")?.classList.add("hidden");
+    el.play.classList.remove("hidden");
 
+    // Weekly Focus + state
+    document.getElementById("focus-open")?.classList.remove("hidden");
+    await initWeeklyFocusUI();
+    await refresh();
+    show(`Joined ${roomCode}`);
   } catch (e) {
     console.error(e);
     alert(`Join failed: ${e.message}`);
   }
 }
-
 
 async function submit(amount) {
   try {
@@ -356,7 +375,6 @@ async function undoLast() {
 }
 
 async function loadHistory() {
-  // Using same state endpoint; months selector retained for UX parity.
   await refresh();
 }
 
@@ -382,6 +400,7 @@ el.minus?.addEventListener("click", () => submit(-1));
 el.undo?.addEventListener("click", undoLast);
 el.months?.addEventListener("change", loadHistory);
 el.csv?.addEventListener("click", exportCSV);
+
 // Instructions modal wiring
 (function instructionsModal() {
   const openBtn = document.getElementById('instructions-open');
@@ -409,8 +428,10 @@ el.csv?.addEventListener("click", exportCSV);
   closeBtn.addEventListener('click', close);
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 })();
+
 // --- background refresh ---
 setInterval(() => { refresh(); }, 5000);
+
 // ===== Weekly Focus (per-user, per-week; locks until Monday 12:01 AM) =====
 
 // DOM hooks (optional elements; code no-ops if missing)
@@ -475,7 +496,7 @@ function renderFocusChips(areas) {
 function hydrateFocusForm(areas) {
   if (!focusEl.form) return;
   // Uncheck all
-  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach(i => i.checked = false);
+  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach i => i.checked = false;
 
   // Ensure any saved custom options exist as checkboxes
   const grid = focusEl.form.querySelector(".focus-grid") || focusEl.form;
@@ -528,16 +549,13 @@ function enforceFocusLimit() {
 
 // Public init called after you know roomCode + displayName
 async function initWeeklyFocusUI() {
-  // if elements not present, skip silently
   if (!focusEl.form || !roomCode) return;
-
   try {
     const data = await focusApiGet(roomCode, displayName);
     hydrateFocusForm(data.areas || []);
     setFocusLockedUI(!!data.locked, data.areas || []);
     enforceFocusLimit();
   } catch (e) {
-    // non-fatal for the rest of the app
     console.warn("Weekly Focus init failed:", e);
   }
 }
@@ -553,7 +571,6 @@ async function initWeeklyFocusUI() {
     modal.hidden = false;
     modal.querySelector(".modal-content")?.focus();
     document.addEventListener("keydown", onKey);
-    // Refresh state when opening, in case week moved or user reloaded
     initWeeklyFocusUI();
   }
   function closeModal() {
@@ -561,20 +578,12 @@ async function initWeeklyFocusUI() {
     document.removeEventListener("keydown", onKey);
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
   }
-  function onKey(e) {
-    if (e.key === "Escape") closeModal();
-  }
+  function onKey(e) { if (e.key === "Escape") closeModal(); }
 
   open.addEventListener("click", openModal);
   close.addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
 
-  // Form interactions
-  form.addEventListener("change", (e) => {
-    if (e.target && e.target.name === "focusArea") enforceFocusLimit();
-  });
-
-  // Optional: add custom focus area chip to the checklist
   if (addCustom && customInput) {
     addCustom.addEventListener("click", () => {
       const v = (customInput.value || "").trim();
@@ -594,7 +603,10 @@ async function initWeeklyFocusUI() {
     });
   }
 
-  // Save -> lock
+  form.addEventListener("change", (e) => {
+    if (e.target && e.target.name === "focusArea") enforceFocusLimit();
+  });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const chosen = getSelectedFocusAreas();
@@ -629,11 +641,10 @@ doJoin = async function wrappedDoJoin() {
 
 // Optional: when the week rolls over while app is open, refresh chips without reload
 setInterval(() => {
-  // If the computed weekKey changed since last call, reload focus state
   const wk = getWeekKeyLocal();
   if (!window.__lastWeekKey) window.__lastWeekKey = wk;
   if (window.__lastWeekKey !== wk) {
     window.__lastWeekKey = wk;
-    initWeeklyFocusUI(); // will show unlocked state for the new week
+    initWeeklyFocusUI();
   }
-}, 60 * 1000); // check once per minute
+}, 60 * 1000);
