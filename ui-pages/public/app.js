@@ -192,6 +192,21 @@ function show(msg, isLoss = false) {
   el.banner.classList.remove("hidden");
   setTimeout(() => el.banner.classList.add("hidden"), 2200);
 }
+// Normalize timestamps coming from API (UTC) into Date objects in user's local time.
+// - Epoch numbers: new Date(number)
+// - ISO strings with Z/offset: new Date(ts)
+// - Naïve "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS": treat as UTC
+function parseTS(ts) {
+  if (ts == null) return null;
+  if (typeof ts === "number") return new Date(ts);
+  if (typeof ts === "string") {
+    if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(ts)) {
+      return new Date(ts.replace(" ", "T") + "Z");
+    }
+    return new Date(ts);
+  }
+  return new Date(ts);
+}
 // === Weekly window helpers (Monday 12:01 boundary is used for focus; here we just need week start at 00:00) ===
 function getWeekStartLocal(d = new Date()) {
   const day = d.getDay(); // 0=Sun..6=Sat
@@ -202,7 +217,7 @@ function getWeekStartLocal(d = new Date()) {
   return start;
 }
 function isInCurrentWeek(ts) {
-  const t = new Date(ts);
+  const t = parseTS(ts);
   return t >= getWeekStartLocal();
 }
 
@@ -262,9 +277,15 @@ function paint(state) {
   const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
   myHistory.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
-    const when = row.created_at
-      ? new Date(row.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-      : "";
+const when = row.created_at
+  ? parseTS(row.created_at).toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    })
+  : "";
     tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
     el.mine.appendChild(tr);
   });
