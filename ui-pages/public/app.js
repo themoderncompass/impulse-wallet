@@ -261,7 +261,9 @@ function paint(state) {
   el.mine.innerHTML = "";
   history.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
-    const when = row.created_at ? new Date(row.created_at).toLocaleString("en-US") : "";
+  const when = row.created_at
+  ? new Date(row.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+  : "";
     tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
     el.mine.appendChild(tr);
   });
