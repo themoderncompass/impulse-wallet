@@ -144,7 +144,7 @@ const el = {
   undo: $("#undo"),
   months: $("#months"),
   mine: $("#mine tbody"),
-  csv: $("#csv")
+  csv: $("#csv"),
    leaveBtn: document.getElementById("leave-room")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
