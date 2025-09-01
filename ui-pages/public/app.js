@@ -473,7 +473,18 @@ const focusEl = {
   addCustom: document.getElementById("focus-add-custom"),
   customInput: document.getElementById("focus-custom-input"),
 };
-
+// Remap legacy names to your new canonical labels; customs are untouched.
+const FOCUS_RENAME = {
+  "Eat Healthy": "Nutrition",
+  "Exercise": "Sleep Hygiene",
+  "Screen Time": "Scrolling",
+  "Caffeine": "Sugar",
+  "Booze": "Alcohol",
+  "Hydration": "Words to Family",
+};
+function normalizeAreas(list) {
+  return (list || []).map(a => FOCUS_RENAME[a] || a);
+}
 // Compute Monday boundary at 12:01 AM local; returns "YYYY-MM-DD"
 function getWeekKeyLocal(now = new Date()) {
   const d = new Date(now);
@@ -577,16 +588,15 @@ function enforceFocusLimit() {
 
 // Public init called after you know roomCode + displayName
 async function initWeeklyFocusUI() {
-  // if elements not present, skip silently
   if (!focusEl.form || !roomCode) return;
 
   try {
     const data = await focusApiGet(roomCode, displayName);
-    hydrateFocusForm(data.areas || []);
-    setFocusLockedUI(!!data.locked, data.areas || []);
+    const areas = normalizeAreas(data.areas || []);
+    hydrateFocusForm(areas);                     // keeps custom-add behavior
+    setFocusLockedUI(!!data.locked, areas);      // uses normalized for chips too
     enforceFocusLimit();
   } catch (e) {
-    // non-fatal for the rest of the app
     console.warn("Weekly Focus init failed:", e);
   }
 }
