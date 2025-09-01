@@ -16,6 +16,21 @@ function getSession() {
 function clearSession() {
   try { localStorage.removeItem(IW_KEY); } catch {}
 }
+// --- leave room (client-only) ---
+function leaveRoom({ redirect = true } = {}) {
+  try { clearSession(); } catch {}
+  roomCode = "";
+  displayName = "";
+
+  // Reset UI to pre-join state
+  document.querySelector(".join")?.classList.remove("hidden");
+  el.play?.classList.add("hidden");
+  document.getElementById("focus-open")?.classList.add("hidden");
+  document.getElementById("leave-room")?.classList.add("hidden");
+
+  show?.("You left the room");
+  if (redirect) location.href = "/";
+}
 
 // --- SFX (iOS-hardened): Web Audio + instant synth fallback ---
 const SFX = { good: "/sfx/good.mp3", bad: "/sfx/bad.mp3" };
@@ -130,6 +145,7 @@ const el = {
   months: $("#months"),
   mine: $("#mine tbody"),
   csv: $("#csv")
+   leaveBtn: document.getElementById("leave-room")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -147,6 +163,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('.join')?.classList.add('hidden');
   el.play?.classList.remove('hidden');
   document.getElementById('focus-open')?.classList.remove('hidden');
+  document.getElementById('leave-room')?.classList.remove('hidden');
 
   // load current state
   try { await initWeeklyFocusUI(); } catch {}
@@ -386,6 +403,8 @@ el.minus?.addEventListener("click", () => submit(-1));
 el.undo?.addEventListener("click", undoLast);
 el.months?.addEventListener("change", loadHistory);
 el.csv?.addEventListener("click", exportCSV);
+el.leaveBtn?.addEventListener("click", () => leaveRoom());
+
 
 // Instructions modal wiring
 (function instructionsModal() {
@@ -623,12 +642,16 @@ createRoom = async function wrappedCreateRoom() {
   await _createRoom();
   document.getElementById("focus-open")?.classList.remove("hidden");
   await initWeeklyFocusUI();
+  document.getElementById("leave-room")?.classList.remove("hidden");
+  await initWeeklyFocusUI();
 };
 
 const _doJoin = doJoin;
 doJoin = async function wrappedDoJoin() {
   await _doJoin();
   document.getElementById("focus-open")?.classList.remove("hidden");
+  await initWeeklyFocusUI();
+  document.getElementById("leave-room")?.classList.remove("hidden");
   await initWeeklyFocusUI();
 };
 
