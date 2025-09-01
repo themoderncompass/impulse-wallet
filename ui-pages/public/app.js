@@ -1,5 +1,48 @@
-import { onJoinedRoom } from './persist-ui.js';
 
+// ===== Persistence (single-file, no modules) =====
+const IW_KEY = 'iw.session';
+
+function iwSaveSession({ roomCode, joinToken, role = 'member' }) {
+  try { localStorage.setItem(IW_KEY, JSON.stringify({ roomCode, joinToken, role, ts: Date.now() })); } catch {}
+}
+function iwGetSession() {
+  try { return JSON.parse(localStorage.getItem(IW_KEY)) || null; } catch { return null; }
+}
+function iwClearSession() {
+  try { localStorage.removeItem(IW_KEY); } catch {}
+}
+
+async function iwTryAutoRejoin() {
+  const s = iwGetSession();
+  if (!s?.roomCode || !s?.joinToken) return;
+  try {
+    const res = await fetch(`/impulse-api/rooms/${encodeURIComponent(s.roomCode)}/rejoin`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ joinToken: s.joinToken })
+    });
+    if (!res.ok) throw 0;
+    const data = await res.json();
+    if (!data?.ok) throw 0;
+    location.href = `/room.html?roomCode=${encodeURIComponent(s.roomCode)}`;
+  } catch {
+    iwClearSession();
+  }
+}
+
+// Try auto-rejoin from the home page
+document.addEventListener('DOMContentLoaded', () => {
+  const onHome = location.pathname.endsWith('/') || location.pathname.endsWith('/index.html');
+  if (onHome) iwTryAutoRejoin();
+});
+
+// Used by createRoom/doJoin success paths
+function onJoinedRoom(result) {
+  const { roomCode, joinToken, role } = result || {};
+  if (roomCode && joinToken) iwSaveSession({ roomCode, joinToken, role });
+  // Redirect either way so legacy behavior still works if token missing
+  location.href = `/room.html?roomCode=${encodeURIComponent(roomCode || '')}`;
+}
 
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
 // API base (Pages). No Worker domain, no CORS headaches.
