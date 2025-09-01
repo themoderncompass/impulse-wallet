@@ -257,22 +257,18 @@ function paint(state) {
     el.board.appendChild(tr);
   }
 
-  // My history (latest first) — unchanged
-  el.mine.innerHTML = "";
-  history.slice().reverse().forEach(row => {
-    const tr = document.createElement("tr");
+// My history (latest first) — show ONLY my rows
+el.mine.innerHTML = "";
+const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
+myHistory.slice().reverse().forEach(row => {
+  const tr = document.createElement("tr");
   const when = row.created_at
-  ? new Date(row.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
-  : "";
-    tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
-    el.mine.appendChild(tr);
-  });
+    ? new Date(row.created_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+    : "";
+  tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
+  el.mine.appendChild(tr);
+});
 
-  // Weekly milestone banners based on this week's totals only
-  const me = stats.get(displayName);
-  if (me && me.balance >= 20) show("You hit +$20 this week. Keep going.");
-  if (me && me.balance <= -20) show("You hit −$20 this week. Keep tracking.", true);
-}
 
 // --- data flows ---
 async function refresh() {
