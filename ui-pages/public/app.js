@@ -2,6 +2,21 @@
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
 
+// ===== Simple client persistence (localStorage) =====
+const IW_KEY = 'iw.session';
+
+function saveSession(roomCode, displayName) {
+  try {
+    localStorage.setItem(IW_KEY, JSON.stringify({ roomCode, displayName, ts: Date.now() }));
+  } catch {}
+}
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(IW_KEY)) || null; } catch { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem(IW_KEY); } catch {}
+}
+
 // --- SFX (iOS-hardened): Web Audio + instant synth fallback ---
 const SFX = { good: "/sfx/good.mp3", bad: "/sfx/bad.mp3" };
 
@@ -116,6 +131,27 @@ const el = {
   mine: $("#mine tbody"),
   csv: $("#csv")
 };
+// ===== Auto-restore on load (stay in your room after refresh) =====
+document.addEventListener('DOMContentLoaded', async () => {
+  const s = getSession(); // {roomCode, displayName} or null
+  if (!s || !s.roomCode) return;
+
+  // hydrate globals + inputs
+  roomCode = s.roomCode;
+  displayName = s.displayName || '';
+
+  if (el.room) el.room.value = roomCode;
+  if (el.name) el.name.value = displayName;
+
+  // show Play UI
+  document.querySelector('.join')?.classList.add('hidden');
+  el.play?.classList.remove('hidden');
+  document.getElementById('focus-open')?.classList.remove('hidden');
+
+  // load current state
+  try { await initWeeklyFocusUI(); } catch {}
+  try { await refresh(); } catch {}
+});
 
 // --- utils ---
 function h(text) {
@@ -234,12 +270,18 @@ async function createRoom() {
     displayName = (el.name.value || "").trim();
     const proposed = (el.room.value || "").trim().toUpperCase();
     const code = proposed || genCode();
+
     await api("/room", {
       method: "POST",
       body: JSON.stringify({ roomCode: code, displayName })
     });
+
     roomCode = code;
     el.room.value = roomCode;
+
+    // Save session locally so user can rejoin after refresh
+    saveSession(roomCode, displayName);
+
     $(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
 
@@ -260,22 +302,29 @@ async function doJoin() {
     roomCode = (el.room.value || "").trim().toUpperCase();
     displayName = (el.name.value || "").trim();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
-    // Ensure room exists (GET /room)
+
+    // Ensure room exists (GET /room) before saving the session
     await api(`/room?roomCode=${encodeURIComponent(roomCode)}`);
-    $(".join")?.classList.add("hidden");
+
+    // Persist so a refresh keeps the session
+    saveSession(roomCode, displayName);
+
+    // Show Play UI once
+    document.querySelector(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
-
-    // NEW: reveal Weekly Focus and init it
     document.getElementById("focus-open")?.classList.remove("hidden");
-    await initWeeklyFocusUI();
 
+    // Init focus + state once
+    await initWeeklyFocusUI();
     await refresh();
+
     show(`Joined ${roomCode}`);
   } catch (e) {
     console.error(e);
     alert(`Join failed: ${e.message}`);
   }
 }
+
 
 
 async function submit(amount) {
@@ -337,6 +386,7 @@ el.minus?.addEventListener("click", () => submit(-1));
 el.undo?.addEventListener("click", undoLast);
 el.months?.addEventListener("change", loadHistory);
 el.csv?.addEventListener("click", exportCSV);
+
 // Instructions modal wiring
 (function instructionsModal() {
   const openBtn = document.getElementById('instructions-open');
