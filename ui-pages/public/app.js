@@ -13,7 +13,27 @@ function getSession() {
 }
 function clearSession() { try { localStorage.removeItem(IW_KEY); } catch {} }
 
-// On page load, restore session and hydrate UI
+// --- dom refs ---
+const $ = (sel) => document.querySelector(sel);
+const el = {
+  room: $("#room"),
+  name: $("#name"),
+  create: $("#create"),
+  join: $("#join"),
+  play: $("#play"),
+  week: $("#week"),
+  impulse: $("#impulse"),
+  plus: $("#plus"),
+  minus: $("#minus"),
+  banner: $("#banner"),
+  board: $("#board tbody"),
+  undo: $("#undo"),
+  months: $("#months"),
+  mine: $("#mine tbody"),
+  csv: $("#csv")
+};
+
+// On page load, restore session and hydrate UI (home or room page)
 document.addEventListener('DOMContentLoaded', async () => {
   const path = location.pathname;
   const isHome = path.endsWith('/') || path.endsWith('/index.html');
@@ -23,7 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const s = getSession(); // { roomCode, displayName } or null
 
   if (isHome) {
-    // If a session exists, bring the user right back into their room
     if (s?.roomCode) {
       // Hydrate globals + inputs, reveal Play UI, then refresh
       roomCode = s.roomCode;
@@ -40,10 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (isRoom) {
-    // If URL has the code, use it; else fall back to session or send home
     if (urlCode) {
       roomCode = urlCode;
-      // If we previously saved a displayName, hydrate it (not critical)
       if (s?.displayName) displayName = s.displayName;
       document.querySelector('.join')?.classList.add('hidden');
       el.play?.classList.remove('hidden');
@@ -56,7 +73,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       location.replace(`/room.html?roomCode=${encodeURIComponent(s.roomCode)}`);
       return;
     }
-    // No URL and no session → go home
     location.replace(`/`);
   }
 });
@@ -84,16 +100,11 @@ function synthClick(kind = "good") {
     const now = ac.currentTime;
     const osc = ac.createOscillator();
     const gain = ac.createGain();
-
-    // good = higher, bad = lower
-    const f0 = kind === "good" ? 880 : 440;
+    const f0 = kind === "good" ? 880 : 440; // good = higher, bad = lower
     osc.frequency.setValueAtTime(f0, now);
-
-    // short envelope (pop-free)
     gain.gain.setValueAtTime(0, now);
     gain.gain.linearRampToValueAtTime(0.4, now + 0.005);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
     osc.connect(gain); gain.connect(ac.destination);
     osc.start(now);
     osc.stop(now + 0.09);
@@ -109,10 +120,7 @@ async function loadBuffers() {
       [SFX.good, SFX.bad].map(async (url) => {
         const res = await fetch(url, { cache: "force-cache" });
         const arr = await res.arrayBuffer();
-        // Some iOS require decodeAudioData callback form; both supported:
-        return await new Promise((resolve, reject) => {
-          ac.decodeAudioData(arr, resolve, reject);
-        });
+        return await new Promise((resolve, reject) => ac.decodeAudioData(arr, resolve, reject));
       })
     );
     buffers.good = g; buffers.bad = b;
@@ -126,17 +134,13 @@ async function loadBuffers() {
 // Public play: resume ctx, fire synth immediately, then prefer decoded buffer if ready
 async function playSfx(kind) {
   const ok = await ensureCtx();
-
-  // Always give instant feedback
-  synthClick(kind);
-
-  // If we have decoded buffers, layer the real sample
+  synthClick(kind); // instant feedback
   if (ok && buffers[kind]) {
     try {
       const src = ac.createBufferSource();
       const g = ac.createGain();
       src.buffer = buffers[kind];
-      g.gain.setValueAtTime(0.6, ac.currentTime);
+      g.gain.setValueAtTime(0.6, ac.currentTime); // avoid clipping when layered
       src.connect(g); g.connect(ac.destination);
       src.start();
     } catch {}
@@ -151,26 +155,6 @@ async function playSfx(kind) {
     if (await ensureCtx()) loadBuffers();
   }, { once: true, passive: true });
 });
-
-// --- dom refs ---
-const $ = (sel) => document.querySelector(sel);
-const el = {
-  room: $("#room"),
-  name: $("#name"),
-  create: $("#create"),
-  join: $("#join"),
-  play: $("#play"),
-  week: $("#week"),
-  impulse: $("#impulse"),
-  plus: $("#plus"),
-  minus: $("#minus"),
-  banner: $("#banner"),
-  board: $("#board tbody"),
-  undo: $("#undo"),
-  months: $("#months"),
-  mine: $("#mine tbody"),
-  csv: $("#csv")
-};
 
 // --- utils ---
 function h(text) {
@@ -208,22 +192,23 @@ function isInCurrentWeek(ts) {
   return t >= getWeekStartLocal();
 }
 
+// --- state ---
+let roomCode = null;
+let displayName = "";
+
 // Compute per-player weekly balance and longest positive streak (deposits)
 function computeWeeklyStats(history) {
   const byPlayer = new Map();
   for (const r of history) {
     if (!r.created_at || !isInCurrentWeek(r.created_at)) continue;
-
     const name = r.player || "—";
     let s = byPlayer.get(name);
     if (!s) {
       s = { balance: 0, currentStreak: 0, longestStreak: 0 };
       byPlayer.set(name, s);
     }
-
     const delta = r.delta || 0;
     s.balance += delta;
-
     if (delta > 0) {
       s.currentStreak += 1;
       if (s.currentStreak > s.longestStreak) s.longestStreak = s.currentStreak;
@@ -233,10 +218,6 @@ function computeWeeklyStats(history) {
   }
   return byPlayer;
 }
-
-// --- state ---
-let roomCode = null;
-let displayName = "";
 
 // --- render ---
 function paint(state) {
@@ -496,7 +477,7 @@ function renderFocusChips(areas) {
 function hydrateFocusForm(areas) {
   if (!focusEl.form) return;
   // Uncheck all
-  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach i => i.checked = false;
+  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach(i => i.checked = false);
 
   // Ensure any saved custom options exist as checkboxes
   const grid = focusEl.form.querySelector(".focus-grid") || focusEl.form;
