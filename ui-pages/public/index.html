@@ -303,14 +303,21 @@
   <div class="beta-card">
     <h2>Beta Access</h2>
     <p>This preview is gated for subscribers. Enter your beta code to continue.</p>
-    <div class="beta-row">
-      <input id="beta-input" type="text" placeholder="Enter beta code" />
-      <button id="beta-submit" type="button">Continue</button>
-    </div>
+
+    <form id="beta-form" class="beta-row" novalidate>
+      <input id="beta-input" type="text" placeholder="Enter beta code" autocomplete="one-time-code" />
+      <button id="beta-submit" type="submit">Continue</button>
+    </form>
+
     <p id="beta-error" class="beta-error" aria-live="polite"></p>
-    <p class="beta-mini">Don’t have a code? Subscribe to the newsletter to request access.</p>
+    <p class="beta-mini">
+      Don’t have a code?
+      <a href="https://themoderncompass.io/newsletter/" target="_blank" rel="noopener">Subscribe to the newsletter</a>
+      to request access.
+    </p>
   </div>
 </section>
+
 
 </body>
 </html>
