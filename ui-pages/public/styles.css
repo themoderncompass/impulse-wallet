@@ -334,4 +334,3 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 
 /* Long policy text scrolls inside modal */
 .policy-body { max-height: 70vh; overflow: auto; padding-right: 0.5rem; }
-
