@@ -1,3 +1,45 @@
+// ===== Beta Gate (one-and-done; long-lived) =====
+(function betaGate() {
+  const CODES = ["IWBETA25"];            // current valid codes for NEW unlocks
+  const COOKIE_NAME = "iw_beta";
+  const COOKIE_OK = "ok";
+  const LS_KEY = "iw.beta.ok";           // localStorage backup flag
+
+  function setCookie(name, value, days = 400) {
+    const d = new Date();
+    d.setTime(d.getTime() + days*24*60*60*1000);
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
+  }
+  function getCookie(name) {
+    return document.cookie.split(";").map(v => v.trim()).find(v => v.startsWith(name + "="))?.split("=")[1] || "";
+  }
+  function hasAccess() {
+    try {
+      if (decodeURIComponent(getCookie(COOKIE_NAME)) === COOKIE_OK) return true;
+    } catch {}
+    try {
+      if (localStorage.getItem(LS_KEY) === "1") return true;
+    } catch {}
+    return false;
+  }
+  function grantAccess() {
+    try { localStorage.setItem(LS_KEY, "1"); } catch {}
+    setCookie(COOKIE_NAME, COOKIE_OK, 400); // ~13 months; browsers may cap, LS is the backup
+  }
+  function tryUrlParam() {
+    const m = location.search.match(/[?&]beta=([^&#]+)/i);
+    if (!m) return false;
+    const code = decodeURIComponent(m[1] || "").trim().toUpperCase();
+    if (CODES.includes(code)) {
+      grantAccess();
+      return true;
+    }
+    return false;
+  }
+
+  if (hasAccess()) return;     // already unlocked on this device
+  if (tryUrlParam()) return;   // unlocked via URL pa
+
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
