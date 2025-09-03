@@ -1,9 +1,9 @@
-// ===== Beta Gate (one-and-done; long-lived) =====
+console.log("app.js LIVE", Date.now());
 (function betaGate() {
-  const CODES = ["IWBETA25"];            // valid codes for NEW unlocks
+  const CODES = ["IWBETA25"];
   const COOKIE_NAME = "iw_beta";
   const COOKIE_OK = "ok";
-  const LS_KEY = "iw.beta.ok";           // localStorage backup flag
+  const LS_KEY = "iw.beta.ok";
 
   function setCookie(name, value, days = 400) {
     const d = new Date();
@@ -20,7 +20,7 @@
   }
   function grantAccess() {
     try { localStorage.setItem(LS_KEY, "1"); } catch {}
-    setCookie(COOKIE_NAME, COOKIE_OK, 400); // ~13 months; LS is the backup
+    setCookie(COOKIE_NAME, COOKIE_OK, 400);
   }
   function tryUrlParam() {
     const m = location.search.match(/[?&]beta=([^&#]+)/i);
@@ -30,12 +30,9 @@
     return false;
   }
 
-  // Already unlocked?
   if (hasAccess()) return;
-  // Unlock via URL param?
   if (tryUrlParam()) return;
 
-  // Show the access panel and wire events
   function showPanel() {
     const panel = document.getElementById("beta-gate");
     if (!panel) return;
@@ -52,30 +49,17 @@
 
       if (CODES.includes(val)) {
         grantAccess();
-
-        // remove overlay completely so nothing can block clicks
-        try { panel.remove(); } catch {
-          panel.hidden = true;
-          panel.style.display = "none";
-        }
-
-        // clean ?beta= without reload
-        try {
-          const url = new URL(location.href);
-          url.searchParams.delete("beta");
-          history.replaceState(null, "", url.toString());
-        } catch {}
-
-        try { console.log("[beta] access granted"); } catch {}
+        try { panel.remove(); } catch { panel.hidden = true; panel.style.display = "none"; }
+        try { const url = new URL(location.href); url.searchParams.delete("beta"); history.replaceState(null, "", url.toString()); } catch {}
+        console.log("[beta] access granted");
       } else {
         if (err) err.textContent = "That code did not match. Try again.";
         input.focus(); input.select();
       }
     }
 
-    // Handle both submit and explicit clicks
     form?.addEventListener("submit", (e) => { e.preventDefault(); unlock(); });
-    btn?.addEventListener("click",   (e) => { e.preventDefault(); unlock(); });
+    btn?.addEventListener("click",  (e) => { e.preventDefault(); unlock(); });
     input?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); unlock(); } });
 
     setTimeout(() => input?.focus(), 0);
