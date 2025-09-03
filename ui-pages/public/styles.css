@@ -334,3 +334,11 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 
 /* Long policy text scrolls inside modal */
 .policy-body { max-height: 70vh; overflow: auto; padding-right: 0.5rem; }
+
+#beta-gate { position: fixed; inset: 0; z-index: 9999; background: rgba(17,24,39,0.72); display: grid; place-items: center; }
+#beta-gate .beta-card { max-width: 520px; width: 92%; background: #fff; color: #111; border-radius: 14px; padding: 24px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+#beta-gate .beta-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 12px; }
+#beta-gate input { padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+#beta-gate button { padding: 10px 14px; border: 0; border-radius: 10px; font-size: 16px; cursor: pointer; }
+#beta-gate .beta-error { color: #b91c1c; min-height: 1.2em; margin-top: 8px; }
+#beta-gate .beta-mini { color: #6b7280; font-size: 0.9rem; margin-top: 6px; }

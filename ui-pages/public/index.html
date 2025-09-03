@@ -297,6 +297,27 @@
   </div>
 
   </main>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=7"></script>
+<!-- Beta Access Panel -->
+<section id="beta-gate" hidden aria-modal="true" role="dialog">
+  <div class="beta-card">
+    <h2>Beta Access</h2>
+    <p>This preview is gated for subscribers. Enter your beta code to continue.</p>
+
+    <form id="beta-form" class="beta-row" novalidate>
+      <input id="beta-input" type="text" placeholder="Enter beta code" autocomplete="one-time-code" />
+      <button id="beta-submit" type="submit">Continue</button>
+    </form>
+
+    <p id="beta-error" class="beta-error" aria-live="polite"></p>
+    <p class="beta-mini">
+      Don’t have a code?
+      <a href="https://themoderncompass.io/newsletter/" target="_blank" rel="noopener">Subscribe to the newsletter</a>
+      to request access.
+    </p>
+  </div>
+</section>
+
+
 </body>
 </html>
