@@ -473,15 +473,10 @@ const focusEl = {
   addCustom: document.getElementById("focus-add-custom"),
   customInput: document.getElementById("focus-custom-input"),
 };
-// Remap legacy names to your new canonical labels; customs are untouched.
-const FOCUS_RENAME = {
-  "Eat Healthy": "Nutrition",
-  "Exercise": "Sleep Hygiene",
-  "Screen Time": "Scrolling",
-  "Caffeine": "Sugar",
-  "Booze": "Alcohol",
-  "Hydration": "Words to Family",
-};
+// No legacy remaps; keep exactly what’s saved or chosen.
+function normalizeAreas(list) {
+  return list || [];
+}
 function normalizeAreas(list) {
   return (list || []).map(a => FOCUS_RENAME[a] || a);
 }
