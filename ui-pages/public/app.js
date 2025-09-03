@@ -84,12 +84,7 @@
       wipe: () => { document.cookie = "iw_beta=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; try { localStorage.removeItem(LS_KEY); } catch {} }
     };
   }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", wirePanel);
-  } else {
-    wirePanel();
-  }
+document.addEventListener("DOMContentLoaded", wirePanel);
 })();
 
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
