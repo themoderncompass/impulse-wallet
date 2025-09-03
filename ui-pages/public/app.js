@@ -1,6 +1,6 @@
 // ===== Beta Gate (one-and-done; long-lived) =====
 (function betaGate() {
-  const CODES = ["IWBETA25"];            // current valid codes for NEW unlocks
+  const CODES = ["IWBETA25"];            // valid codes for NEW unlocks
   const COOKIE_NAME = "iw_beta";
   const COOKIE_OK = "ok";
   const LS_KEY = "iw.beta.ok";           // localStorage backup flag
@@ -14,31 +14,80 @@
     return document.cookie.split(";").map(v => v.trim()).find(v => v.startsWith(name + "="))?.split("=")[1] || "";
   }
   function hasAccess() {
-    try {
-      if (decodeURIComponent(getCookie(COOKIE_NAME)) === COOKIE_OK) return true;
-    } catch {}
-    try {
-      if (localStorage.getItem(LS_KEY) === "1") return true;
-    } catch {}
+    try { if (decodeURIComponent(getCookie(COOKIE_NAME)) === COOKIE_OK) return true; } catch {}
+    try { if (localStorage.getItem(LS_KEY) === "1") return true; } catch {}
     return false;
   }
   function grantAccess() {
     try { localStorage.setItem(LS_KEY, "1"); } catch {}
-    setCookie(COOKIE_NAME, COOKIE_OK, 400); // ~13 months; browsers may cap, LS is the backup
+    setCookie(COOKIE_NAME, COOKIE_OK, 400); // ~13 months; LS is the backup
   }
   function tryUrlParam() {
     const m = location.search.match(/[?&]beta=([^&#]+)/i);
     if (!m) return false;
     const code = decodeURIComponent(m[1] || "").trim().toUpperCase();
-    if (CODES.includes(code)) {
-      grantAccess();
-      return true;
-    }
+    if (CODES.includes(code)) { grantAccess(); return true; }
     return false;
   }
 
-  if (hasAccess()) return;     // already unlocked on this device
-  if (tryUrlParam()) return;   // unlocked via URL pa
+  // Already unlocked?
+  if (hasAccess()) return;
+  // Unlock via URL param?
+  if (tryUrlParam()) return;
+
+  // Show the access panel and wire events
+  function showPanel() {
+    const panel = document.getElementById("beta-gate");
+    if (!panel) return;
+    panel.hidden = false;
+
+    const form  = panel.querySelector("#beta-form");
+    const input = panel.querySelector("#beta-input");
+    const btn   = panel.querySelector("#beta-submit");
+    const err   = panel.querySelector("#beta-error");
+
+    function unlock() {
+      const val = (input.value || "").trim().toUpperCase();
+      if (!val) return;
+
+      if (CODES.includes(val)) {
+        grantAccess();
+
+        // remove overlay completely so nothing can block clicks
+        try { panel.remove(); } catch {
+          panel.hidden = true;
+          panel.style.display = "none";
+        }
+
+        // clean ?beta= without reload
+        try {
+          const url = new URL(location.href);
+          url.searchParams.delete("beta");
+          history.replaceState(null, "", url.toString());
+        } catch {}
+
+        try { console.log("[beta] access granted"); } catch {}
+      } else {
+        if (err) err.textContent = "That code did not match. Try again.";
+        input.focus(); input.select();
+      }
+    }
+
+    // Handle both submit and explicit clicks
+    form?.addEventListener("submit", (e) => { e.preventDefault(); unlock(); });
+    btn?.addEventListener("click",   (e) => { e.preventDefault(); unlock(); });
+    input?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); unlock(); } });
+
+    setTimeout(() => input?.focus(), 0);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", showPanel);
+  } else {
+    showPanel();
+  }
+})();
+
 
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
 // API base (Pages). No Worker domain, no CORS headaches.
