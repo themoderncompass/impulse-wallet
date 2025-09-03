@@ -7,7 +7,9 @@
   // quick helpers
   function setCookie(days = 400) {
     const d = new Date(); d.setTime(d.getTime() + days*24*60*60*1000);
-    document.cookie = `${COOKIE}; expires=${d.toUTCString()}; path=/; SameSite=Lax`;
+    // add ; Secure on https to be extra solid
+    const secure = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${COOKIE}; expires=${d.toUTCString()}; path=/; SameSite=Lax${secure}`;
   }
   function hasCookie() {
     return document.cookie.split(";").some(s => s.trim().startsWith("iw_beta=ok"));
@@ -84,7 +86,38 @@
       wipe: () => { document.cookie = "iw_beta=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; try { localStorage.removeItem(LS_KEY); } catch {} }
     };
   }
-document.addEventListener("DOMContentLoaded", wirePanel);
+
+  // --- wire the panel once it actually exists in DOM ---
+  let __betaWired = false;
+  function wireOnce() {
+    if (__betaWired) return true;
+    const panel = document.getElementById("beta-gate");
+    if (!panel) return false;
+    __betaWired = true;
+    wirePanel();
+    return true;
+  }
+
+  // Try immediately, then on DOM ready/load, and keep watching briefly.
+  function ensureWired() {
+    if (wireOnce()) return;
+
+    document.addEventListener("DOMContentLoaded", wireOnce, { once: true });
+    window.addEventListener("load", wireOnce, { once: true });
+
+    const mo = new MutationObserver(() => {
+      if (wireOnce()) mo.disconnect();
+    });
+    mo.observe(document.documentElement || document.body, { childList: true, subtree: true });
+
+    // Short poll as final belt-and-suspenders (covers odd Safari timing)
+    let tries = 0;
+    const t = setInterval(() => {
+      if (wireOnce() || ++tries > 40) clearInterval(t); // ~2s total
+    }, 50);
+  }
+
+  ensureWired();
 })();
 
 // ===== Impulse Wallet — frontend (Pages Functions contract) =====
