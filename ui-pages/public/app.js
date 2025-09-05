@@ -682,25 +682,23 @@ async function initWeeklyFocusUI() {
     if (e.target && e.target.name === "focusArea") enforceFocusLimit();
   });
 
-  // Optional: add custom focus area chip to the checklist
-  if (addCustom && customInput) {
-    addCustom.addEventListener("click", () => {
-      const v = (customInput.value || "").trim();
-      if (!v) return;
-      const grid = form.querySelector(".focus-grid") || form;
-      const label = document.createElement("label");
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.name = "focusArea";
-      input.value = v;
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(" " + v));
-      grid.appendChild(label);
-      input.checked = true;
-      customInput.value = "";
-      enforceFocusLimit();
-    });
-  }
+ // Optional: add custom focus area chip to the checklist
+if (addCustom && customInput) {
+  addCustom.addEventListener("click", () => {
+    const v = (customInput.value || "").trim();
+    if (!v) return;
+    const grid = form.querySelector(".focus-grid") || form;
+    const label = document.createElement("label");
+    
+    label.innerHTML = `<input type="checkbox" name="focusArea" value="${v}"> ${v}`;
+    const checkbox = label.querySelector('input');
+    checkbox.checked = true;
+    
+    grid.appendChild(label);
+    customInput.value = "";
+    enforceFocusLimit();
+  });
+}
 
   // Save -> lock
   form.addEventListener("submit", async (e) => {
