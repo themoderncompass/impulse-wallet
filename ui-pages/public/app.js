@@ -2,6 +2,57 @@
 // API base (Pages). No Worker domain, no CORS headaches.
 const API_BASE = "/impulse-api";
 
+// ===== Auth0 Integration =====
+let auth0Client = null;
+let isAuthenticated = false;
+let currentUser = null;
+
+// Replace these with your actual Auth0 credentials
+const AUTH0_CONFIG = {
+  domain: 'dev-3uk6085msdb8khfj.us.auth0.com',      // Replace with your real domain
+  clientId: 'KNW1BxhYtkX9rLRBqPb05jFjScM29mFT',           // Replace with your real client ID
+  authorizationParams: {
+    redirect_uri: window.location.origin
+  }
+};
+
+// Initialize Auth0 (called but doesn't affect existing functionality)
+async function initAuth0() {
+  try {
+    auth0Client = await auth0.createAuth0Client(AUTH0_CONFIG);
+    
+    // Handle redirect callback
+    if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+      await auth0Client.handleRedirectCallback();
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Check if user is authenticated
+    isAuthenticated = await auth0Client.isAuthenticated();
+    if (isAuthenticated) {
+      currentUser = await auth0Client.getUser();
+    }
+  } catch (error) {
+    console.error('Auth0 initialization failed:', error);
+  }
+}
+
+// Auth functions (ready but not wired up yet)
+async function login() {
+  if (!auth0Client) return;
+  await auth0Client.loginWithRedirect();
+}
+
+async function logout() {
+  if (!auth0Client) return;
+  clearSession();
+  await auth0Client.logout({
+    logoutParams: {
+      returnTo: window.location.origin
+    }
+  });
+}
+
 // ===== Simple client persistence (localStorage) =====
 const IW_KEY = 'iw.session';
 
@@ -149,6 +200,9 @@ const el = {
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
 document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize Auth0 (silent, doesn't affect existing flow)
+  await initAuth0();
+  
   const s = getSession(); // {roomCode, displayName} or null
   if (!s || !s.roomCode) return;
 
