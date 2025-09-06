@@ -529,9 +529,8 @@ const focusEl = {
   customInput: document.getElementById("focus-custom-input"),
 };
 
-// Remove duplicate - keep only one normalizeAreas function
 function normalizeAreas(list) {
-  return (list || []).map(a => FOCUS_RENAME[a] || a);
+  return list || [];
 }
 
 // Compute Monday boundary at 12:01 AM local; returns "YYYY-MM-DD"
