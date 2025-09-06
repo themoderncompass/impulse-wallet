@@ -213,10 +213,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize anonymous user system
   initUserSystem();
   
-  // ... any other existing initialization code you want to keep
-});
+  // Session restoration code (moved inside the function)
   const s = getSession(); // {roomCode, displayName} or null
-  if (!s || !s.roomCode) return;
+  if (!s || !s.roomCode) return; // ✅ Now this return is inside the function
 
   // hydrate globals + inputs
   roomCode = s.roomCode;
