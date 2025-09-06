@@ -514,6 +514,7 @@ el.leaveBtn?.addEventListener("click", () => leaveRoom());
 })();
 // --- background refresh ---
 setInterval(() => { refresh(); }, 5000);
+
 // ===== Weekly Focus (per-user, per-week; locks until Monday 12:01 AM) =====
 
 // DOM hooks (optional elements; code no-ops if missing)
@@ -527,13 +528,11 @@ const focusEl = {
   addCustom: document.getElementById("focus-add-custom"),
   customInput: document.getElementById("focus-custom-input"),
 };
-// No legacy remaps; keep exactly what’s saved or chosen.
+
 function normalizeAreas(list) {
   return list || [];
 }
-function normalizeAreas(list) {
-  return (list || []).map(a => FOCUS_RENAME[a] || a);
-}
+
 // Compute Monday boundary at 12:01 AM local; returns "YYYY-MM-DD"
 function getWeekKeyLocal(now = new Date()) {
   const d = new Date(now);
@@ -580,41 +579,64 @@ function renderFocusChips(areas) {
   }
 }
 
-// Sync form checkboxes with current areas
-function hydrateFocusForm(areas) {
-  if (!focusEl.form) return;
-  // Uncheck all
-  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach(i => i.checked = false);
+// Create checkbox element for a focus area
+function createFocusAreaCheckbox(areaName, checked = false) {
+  const label = document.createElement("label");
+  label.className = "focus-area-label";
+  
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.name = "focusArea";
+  input.value = areaName;
+  input.checked = checked;
+  
+  // Add event listener for limit enforcement
+  input.addEventListener('change', enforceFocusLimit);
+  
+  label.appendChild(input);
+  label.appendChild(document.createTextNode(" " + areaName));
+  
+  return label;
+}
 
-  // Ensure any saved custom options exist as checkboxes
+// Sync form checkboxes with current areas - FIXED VERSION
+function hydrateFocusForm(savedAreas = []) {
+  if (!focusEl.form) return;
+  
   const grid = focusEl.form.querySelector(".focus-grid") || focusEl.form;
-  for (const a of areas || []) {
-    let box = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]')).find(i => i.value === a);
-    if (!box) {
-      const label = document.createElement("label");
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.name = "focusArea";
-      input.value = a;
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(" " + a));
-      grid.appendChild(label);
-      box = input;
+  
+  // First, uncheck all existing checkboxes
+  focusEl.form.querySelectorAll('input[name="focusArea"]').forEach(i => i.checked = false);
+  
+  // For each saved area, either check existing checkbox or create new one
+  for (const areaName of savedAreas) {
+    let existingInput = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]'))
+      .find(input => input.value === areaName);
+    
+    if (existingInput) {
+      // Area already exists as checkbox, just check it
+      existingInput.checked = true;
+    } else {
+      // This is a custom area that needs to be recreated
+      const newCheckbox = createFocusAreaCheckbox(areaName, true);
+      grid.appendChild(newCheckbox);
     }
-    box.checked = true;
   }
 }
 
 // Enable/disable UI based on lock
 function setFocusLockedUI(locked, areas) {
   if (!focusEl.form) return;
+  
   const controls = focusEl.form.querySelectorAll("input, button, select, textarea");
   controls.forEach(elm => elm.disabled = !!locked);
+  
   if (focusEl.error) {
     focusEl.error.textContent = locked
       ? "Locked for this week. Resets Monday at 12:01 AM."
       : "Choose 2–3 areas. These will lock for the week.";
   }
+  
   renderFocusChips(areas);
 }
 
@@ -624,12 +646,17 @@ function getSelectedFocusAreas() {
   return Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]:checked'))
     .map(i => i.value.trim());
 }
+
 function enforceFocusLimit() {
   if (!focusEl.form || !focusEl.error) return;
   const n = getSelectedFocusAreas().length;
   const boxes = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]'));
   const disable = n >= 3;
-  boxes.forEach(b => { if (!b.checked) b.disabled = disable; });
+  
+  boxes.forEach(b => { 
+    if (!b.checked) b.disabled = disable; 
+  });
+  
   if (n < 2) focusEl.error.textContent = "Choose at least 2 areas.";
   else if (n > 3) focusEl.error.textContent = "Limit is 3 areas.";
   else focusEl.error.textContent = "";
@@ -640,14 +667,82 @@ async function initWeeklyFocusUI() {
   if (!focusEl.form || !roomCode) return;
 
   try {
+    console.log("Loading focus data for:", { roomCode, displayName });
     const data = await focusApiGet(roomCode, displayName);
+    console.log("Focus API returned:", data);
+    
     const areas = normalizeAreas(data.areas || []);
-    hydrateFocusForm(areas);                     // keeps custom-add behavior
-    setFocusLockedUI(!!data.locked, areas);      // uses normalized for chips too
+    console.log("Normalized areas:", areas);
+    
+    // Properly restore the UI state
+    hydrateFocusForm(areas);
+    setFocusLockedUI(!!data.locked, areas);
     enforceFocusLimit();
+    
   } catch (e) {
     console.warn("Weekly Focus init failed:", e);
+    // On error, still try to set up empty form
+    if (focusEl.error) {
+      focusEl.error.textContent = "Could not load focus areas. Please try again.";
+    }
   }
+}
+
+// Handle form submission
+async function handleFocusSubmit(event) {
+  event.preventDefault();
+  
+  const selectedAreas = getSelectedFocusAreas();
+  if (selectedAreas.length < 2 || selectedAreas.length > 3) {
+    if (focusEl.error) {
+      focusEl.error.textContent = "Please select 2-3 focus areas.";
+    }
+    return;
+  }
+  
+  try {
+    const result = await focusApiPost(roomCode, displayName, selectedAreas);
+    
+    // Update UI to reflect locked state
+    setFocusLockedUI(true, selectedAreas);
+    
+    // Close modal if save was successful
+    if (focusEl.modal) {
+      focusEl.modal.hidden = true;
+    }
+    
+  } catch (error) {
+    if (focusEl.error) {
+      focusEl.error.textContent = error.message || "Failed to save focus areas.";
+    }
+  }
+}
+
+// Add custom focus area
+function handleAddCustomArea() {
+  if (!focusEl.customInput || !focusEl.form) return;
+  
+  const customArea = focusEl.customInput.value.trim();
+  if (!customArea) return;
+  
+  // Check if area already exists
+  const existing = Array.from(focusEl.form.querySelectorAll('input[name="focusArea"]'))
+    .find(input => input.value.toLowerCase() === customArea.toLowerCase());
+    
+  if (existing) {
+    existing.checked = true;
+    focusEl.customInput.value = '';
+    enforceFocusLimit();
+    return;
+  }
+  
+  // Add new checkbox for custom area
+  const grid = focusEl.form.querySelector(".focus-grid") || focusEl.form;
+  const newCheckbox = createFocusAreaCheckbox(customArea, true);
+  grid.appendChild(newCheckbox);
+  
+  focusEl.customInput.value = '';
+  enforceFocusLimit();
 }
 
 // Modal wiring (mirrors your Instructions modal pattern)
@@ -656,6 +751,7 @@ async function initWeeklyFocusUI() {
   if (!open || !modal || !close || !form) return;
 
   let lastFocus = null;
+  
   function openModal() {
     lastFocus = document.activeElement;
     modal.hidden = false;
@@ -664,87 +760,54 @@ async function initWeeklyFocusUI() {
     // Refresh state when opening, in case week moved or user reloaded
     initWeeklyFocusUI();
   }
+  
   function closeModal() {
     modal.hidden = true;
     document.removeEventListener("keydown", onKey);
     if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
   }
+  
   function onKey(e) {
     if (e.key === "Escape") closeModal();
   }
 
-  open.addEventListener("click", openModal);
-  close.addEventListener("click", closeModal);
-  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-
-  // Form interactions
-  form.addEventListener("change", (e) => {
-    if (e.target && e.target.name === "focusArea") enforceFocusLimit();
+  // Event listeners
+  open.addEventListener('click', openModal);
+  close.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { 
+    if (e.target === modal) closeModal(); 
   });
-
- // Optional: add custom focus area chip to the checklist
-if (addCustom && customInput) {
-  addCustom.addEventListener("click", () => {
-    const v = (customInput.value || "").trim();
-    if (!v) return;
-    const grid = form.querySelector(".focus-grid") || form;
-    const label = document.createElement("label");
-    
-    label.innerHTML = `<input type="checkbox" name="focusArea" value="${v}"> ${v}`;
-    const checkbox = label.querySelector('input');
-    checkbox.checked = true;
-    
-    grid.appendChild(label);
-    customInput.value = "";
-    enforceFocusLimit();
-  });
-}
-
-  // Save -> lock
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const chosen = getSelectedFocusAreas();
-    if (chosen.length < 2 || chosen.length > 3) { enforceFocusLimit(); return; }
-    try {
-      const res = await focusApiPost(roomCode, displayName, chosen);
-      setFocusLockedUI(!!res.locked, res.areas || []);
-      closeModal();
-      show("Weekly Focus locked");
-    } catch (err) {
-      if (focusEl.error) {
-        focusEl.error.textContent = err.message || "Failed to save focus";
+  
+  // Form submission
+  form.addEventListener('submit', handleFocusSubmit);
+  
+  // Add custom area functionality
+  if (addCustom) {
+    addCustom.addEventListener('click', handleAddCustomArea);
+  }
+  
+  if (customInput) {
+    customInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCustomArea();
       }
-    }
+    });
+  }
+  
+  // Add change listeners to existing checkboxes for limit enforcement
+  form.querySelectorAll('input[name="focusArea"]').forEach(input => {
+    input.addEventListener('change', enforceFocusLimit);
   });
 })();
 
-// Call initWeeklyFocusUI after join/create so UI shows current lock state
-const _createRoom = createRoom;
-createRoom = async function wrappedCreateRoom() {
-  await _createRoom();
-  document.getElementById("focus-open")?.classList.remove("hidden");
-  document.getElementById("leave-room")?.classList.remove("hidden");
-  await initWeeklyFocusUI();
-};
-
-const _doJoin = doJoin;
-doJoin = async function wrappedDoJoin() {
-  await _doJoin();
-  document.getElementById("focus-open")?.classList.remove("hidden");
-  document.getElementById("leave-room")?.classList.remove("hidden");
-  await initWeeklyFocusUI();
-};
-
-// Optional: when the week rolls over while app is open, refresh chips without reload
+// Auto-refresh focus areas periodically (optional)
 setInterval(() => {
-  // If the computed weekKey changed since last call, reload focus state
-  const wk = getWeekKeyLocal();
-  if (!window.__lastWeekKey) window.__lastWeekKey = wk;
-  if (window.__lastWeekKey !== wk) {
-    window.__lastWeekKey = wk;
-    initWeeklyFocusUI(); // will show unlocked state for the new week
+  // Only refresh if not currently in modal and not locked
+  if (focusEl.modal?.hidden !== false && roomCode && displayName) {
+    initWeeklyFocusUI().catch(console.warn);
   }
-}, 60 * 1000); // check once per minute
+}, 60000); // Check every minute
 
 // === Legal modals: Privacy + Terms (reuse your existing modal pattern) ===
 (function wireLegalModals() {
