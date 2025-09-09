@@ -317,20 +317,23 @@
         </div>
 
         <!-- Contact Form -->
-        <div id="contact-form">
+        <form id="contact-form">
+          <!-- Web3Forms access key -->
+          <input type="hidden" name="access_key" value="bd8675f4-e7c6-4213-8e7c-2d79cae0a3bf">
+
           <div style="margin-bottom: 1rem;">
             <label for="contact-name" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Name</label>
-            <input type="text" id="contact-name" placeholder="Your name" required>
+            <input type="text" id="contact-name" name="name" placeholder="Your name" required>
           </div>
           
           <div style="margin-bottom: 1rem;">
             <label for="contact-email" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Email</label>
-            <input type="email" id="contact-email" placeholder="your@email.com" required>
+            <input type="email" id="contact-email" name="email" placeholder="your@email.com" required>
           </div>
           
           <div style="margin-bottom: 1rem;">
             <label for="contact-category" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Category</label>
-            <select id="contact-category" style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff;" required>
+            <select id="contact-category" name="category" style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff;" required>
               <option value="">Select a category</option>
               <option value="app-issue">App Issue</option>
               <option value="feature-request">Feature Request</option>
@@ -339,7 +342,7 @@
           
           <div style="margin-bottom: 1rem;">
             <label for="contact-message" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Message</label>
-            <textarea id="contact-message" placeholder="What is on your mind?" required 
+            <textarea id="contact-message" name="message" placeholder="What is on your mind?" required 
               style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff; min-height: 120px; resize: vertical; font-family: inherit;"></textarea>
           </div>
           
@@ -347,7 +350,7 @@
             <button type="button" id="cancel-btn" class="secondary">Cancel</button>
             <button type="button" id="submit-btn" class="primary">Send Message</button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   </div>
@@ -359,13 +362,12 @@
 
 <!-- Contact modal script (runs after app.js, fully defensive) -->
 <script>
-  
 (function() {
   try {
     const contactBtn = document.getElementById('contact-btn');
     const contactModal = document.getElementById('contact-modal');
     if (!contactBtn || !contactModal) return; // do nothing if markup not present
-    const SUPPORT_EMAIL = 'support@themoderncompass.io';
+
     const closeBtn = document.getElementById('contact-close');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = document.getElementById('submit-btn');
@@ -387,10 +389,7 @@
     }
 
     function resetForm() {
-      if (nameInput) nameInput.value = '';
-      if (emailInput) emailInput.value = '';
-      if (categoryInput) categoryInput.value = '';
-      if (messageInput) messageInput.value = '';
+      if (contactForm) contactForm.reset();
       if (contactForm) contactForm.hidden = false;
       if (successState) successState.hidden = true;
       isSubmitting = false;
@@ -422,49 +421,48 @@
       if (e.key === 'Escape' && !contactModal.hidden) closeModal();
     });
 
-    // REPLACE your existing submit handler with this:
-if (submitBtn) submitBtn.addEventListener('click', function () {
-  if (isSubmitting) return;
+    // Submit handler → Web3Forms
+    if (submitBtn) submitBtn.addEventListener('click', async function () {
+      if (isSubmitting) return;
 
-  // Basic validation
-  if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
-    alert('Please fill in all fields.');
-    return;
-  }
+      // Basic validation
+      if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
+        alert('Please fill in all fields.');
+        return;
+      }
 
-  isSubmitting = true;
-  updateSubmitButton();
+      isSubmitting = true;
+      updateSubmitButton();
 
-  // Build subject/body
-  const subject = 'Contact Form - ' + categoryInput.options[categoryInput.selectedIndex].text;
-  const body =
-    'Name: ' + nameInput.value + '\n' +
-    'Email: ' + emailInput.value + '\n' +
-    'Category: ' + categoryInput.value + '\n\n' +
-    'Message:\n' + messageInput.value;
+      try {
+        const formData = new FormData(contactForm);
 
-  // Open the user’s mail client
-  const href = 'mailto:' + encodeURIComponent(SUPPORT_EMAIL)
-    + '?subject=' + encodeURIComponent(subject)
-    + '&body=' + encodeURIComponent(body);
+        const resp = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          body: formData
+        });
 
-  // Trigger
-  window.location.href = href;
+        const result = await resp.json();
 
-  // Optional: brief success state so the UI doesn’t feel stuck
-  if (contactForm && successState) {
-    contactForm.hidden = true;
-    successState.hidden = false;
-    setTimeout(() => {
-      // close like normal
-      const evt = new Event('click');
-      document.getElementById('cancel-btn')?.dispatchEvent(evt);
-    }, 1200);
-  }
+        if (resp.ok && result.success) {
+          // Show success state
+          if (contactForm) contactForm.hidden = true;
+          if (successState) successState.hidden = false;
 
-  isSubmitting = false;
-  updateSubmitButton();
-});
+          // Auto close after 3 seconds
+          setTimeout(() => { closeModal(); }, 3000);
+        } else {
+          console.error('Web3Forms error:', result);
+          alert('Sorry, there was an error sending your message. Please try again.');
+        }
+      } catch (err) {
+        console.error('Network error:', err);
+        alert('Sorry, there was an error sending your message. Please try again.');
+      }
+
+      isSubmitting = false;
+      updateSubmitButton();
+    });
   } catch (e) {
     console.error('Contact modal init error:', e);
   }
