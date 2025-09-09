@@ -378,9 +378,10 @@ async function createRoom() {
     const proposed = (el.room.value || "").trim().toUpperCase();
     const code = proposed || genCode();
 
+    // IMPORTANT: include userId so server creates the (room_code, user_id, name) membership
     await api("/room", {
       method: "POST",
-      body: JSON.stringify({ roomCode: code, displayName })
+      body: JSON.stringify({ roomCode: code, displayName, userId: currentUserId })
     });
 
     roomCode = code;
@@ -389,16 +390,23 @@ async function createRoom() {
     // Save session locally so user can rejoin after refresh
     saveSession(roomCode, displayName);
 
-    $(".join")?.classList.add("hidden");
+    // Show Play UI
+    document.querySelector(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
-
-    // NEW: reveal Weekly Focus and init it
     document.getElementById("focus-open")?.classList.remove("hidden");
-    await initWeeklyFocusUI();
+    document.getElementById("leave-room")?.classList.remove("hidden");
 
+    // Init weekly focus + state
+    await initWeeklyFocusUI();
     await refresh();
+
     show(`Room ${roomCode} ready`);
   } catch (e) {
+    // handle duplicate name nicely
+    if (String(e.message || "").includes("DUPLICATE_NAME")) {
+      alert("That display name is already taken in this room. Please choose another.");
+      return;
+    }
     console.error(e);
     alert(`Create failed: ${e.message}`);
   }
@@ -410,23 +418,31 @@ async function doJoin() {
     displayName = (el.name.value || "").trim();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
 
-    // Ensure room exists (GET /room) before saving the session
-    await api(`/room?roomCode=${encodeURIComponent(roomCode)}`);
+    // Claim/verify membership (will 409 if name taken by another UUID)
+    await api("/room", {
+      method: "POST",
+      body: JSON.stringify({ roomCode, displayName, userId: currentUserId })
+    });
 
     // Persist so a refresh keeps the session
     saveSession(roomCode, displayName);
 
-    // Show Play UI once
+    // Show Play UI
     document.querySelector(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
     document.getElementById("focus-open")?.classList.remove("hidden");
+    document.getElementById("leave-room")?.classList.remove("hidden");
 
-    // Init focus + state once
+    // Init focus + state
     await initWeeklyFocusUI();
     await refresh();
 
     show(`Joined ${roomCode}`);
   } catch (e) {
+    if (String(e.message || "").includes("DUPLICATE_NAME")) {
+      alert("That display name is already taken in this room. Please choose another.");
+      return;
+    }
     console.error(e);
     alert(`Join failed: ${e.message}`);
   }
@@ -438,17 +454,30 @@ async function submit(amount) {
   try {
     if (!roomCode) throw new Error("Join or create a room first");
 
-    // play sound instantly, before network call
+    // Immediate SFX
     playSfx(amount === 1 ? "good" : "bad");
 
     const impulse = (el.impulse.value || "").trim();
     await api("/state", {
       method: "POST",
-      body: JSON.stringify({ roomCode, entry: { delta: amount, label: impulse, player: displayName } })
+      body: JSON.stringify({
+        roomCode,
+        entry: { delta: amount, label: impulse, userId: currentUserId }
+      })
     });
+
     el.impulse.value = "";
     await refresh();
   } catch (e) {
+    const msg = String(e.message || "");
+    if (msg.includes("AUTH_REQUIRED") || msg.includes("JOIN_REQUIRED") || /401|403/.test(msg)) {
+      // bounce user back to join flow
+      alert("Please rejoin the room (we need to confirm your name/UUID).");
+      // show join UI
+      document.querySelector(".join")?.classList.remove("hidden");
+      el.play?.classList.add("hidden");
+      return;
+    }
     console.error(e);
     alert(`Save failed: ${e.message}`);
   }
@@ -457,10 +486,18 @@ async function submit(amount) {
 async function undoLast() {
   try {
     if (!roomCode) throw new Error("Join or create a room first");
-    const player = (document.querySelector('#name')?.value || '').trim();
-    await api(`/state?roomCode=${encodeURIComponent(roomCode)}&player=${encodeURIComponent(player)}`, { method: "DELETE" });
+    await api(`/state?roomCode=${encodeURIComponent(roomCode)}&userId=${encodeURIComponent(currentUserId)}`, {
+      method: "DELETE"
+    });
     await refresh();
   } catch (e) {
+    const msg = String(e.message || "");
+    if (msg.includes("AUTH_REQUIRED") || msg.includes("JOIN_REQUIRED") || /401|403/.test(msg)) {
+      alert("Please rejoin the room (we need to confirm your name/UUID).");
+      document.querySelector(".join")?.classList.remove("hidden");
+      el.play?.classList.add("hidden");
+      return;
+    }
     console.error(e);
     alert(`Undo failed: ${e.message}`);
   }
@@ -557,24 +594,26 @@ function getWeekKeyLocal(now = new Date()) {
   return `${y}-${m}-${dd}`;
 }
 
-async function focusApiGet(roomCode, player) {
+// GET
+async function focusApiGet(roomCode, userId) {
   const weekKey = getWeekKeyLocal();
-  const url = `${API_BASE}/focus?roomCode=${encodeURIComponent(roomCode)}&player=${encodeURIComponent(player || "")}&weekKey=${weekKey}`;
+  const url = `${API_BASE}/focus?roomCode=${encodeURIComponent(roomCode)}&userId=${encodeURIComponent(userId)}&weekKey=${weekKey}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`Focus load failed: ${r.status}`);
-  return r.json(); // { roomCode, player, playerId, weekKey, areas, locked }
+  return r.json();
 }
 
-async function focusApiPost(roomCode, player, areas) {
+// POST
+async function focusApiPost(roomCode, userId, areas) {
   const weekKey = getWeekKeyLocal();
   const r = await fetch(`${API_BASE}/focus`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ roomCode, player, weekKey, areas }),
+    body: JSON.stringify({ roomCode, userId, weekKey, areas }),
   });
   if (r.status === 409) throw new Error("Weekly focus already set");
   if (!r.ok) throw new Error(`Focus save failed: ${r.status}`);
-  return r.json(); // { locked:true, areas:[...] }
+  return r.json();
 }
 
 // Render chips in header
@@ -673,26 +712,19 @@ function enforceFocusLimit() {
   else focusEl.error.textContent = "";
 }
 
-// Public init called after you know roomCode + displayName
+// Public init called after you know roomCode
 async function initWeeklyFocusUI() {
   if (!focusEl.form || !roomCode) return;
 
   try {
-    console.log("Loading focus data for:", { roomCode, displayName });
-    const data = await focusApiGet(roomCode, displayName);
-    console.log("Focus API returned:", data);
-    
+    const data = await focusApiGet(roomCode, currentUserId);
     const areas = normalizeAreas(data.areas || []);
-    console.log("Normalized areas:", areas);
-    
-    // Properly restore the UI state
+
     hydrateFocusForm(areas);
     setFocusLockedUI(!!data.locked, areas);
     enforceFocusLimit();
-    
   } catch (e) {
     console.warn("Weekly Focus init failed:", e);
-    // On error, still try to set up empty form
     if (focusEl.error) {
       focusEl.error.textContent = "Could not load focus areas. Please try again.";
     }
@@ -702,26 +734,17 @@ async function initWeeklyFocusUI() {
 // Handle form submission
 async function handleFocusSubmit(event) {
   event.preventDefault();
-  
+
   const selectedAreas = getSelectedFocusAreas();
   if (selectedAreas.length < 2 || selectedAreas.length > 3) {
-    if (focusEl.error) {
-      focusEl.error.textContent = "Please select 2-3 focus areas.";
-    }
+    if (focusEl.error) focusEl.error.textContent = "Please select 2-3 focus areas.";
     return;
   }
-  
+
   try {
-    const result = await focusApiPost(roomCode, displayName, selectedAreas);
-    
-    // Update UI to reflect locked state
+    await focusApiPost(roomCode, currentUserId, selectedAreas);
     setFocusLockedUI(true, selectedAreas);
-    
-    // Close modal if save was successful
-    if (focusEl.modal) {
-      focusEl.modal.hidden = true;
-    }
-    
+    if (focusEl.modal) focusEl.modal.hidden = true;
   } catch (error) {
     if (focusEl.error) {
       focusEl.error.textContent = error.message || "Failed to save focus areas.";

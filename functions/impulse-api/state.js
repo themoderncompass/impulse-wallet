@@ -6,6 +6,8 @@ function json(body, status = 200) {
   });
 }
 
+const up = (s) => (s || "").trim().toUpperCase();
+
 async function getCols(env, table) {
   const info = await env.DB.prepare(`PRAGMA table_info(${table})`).all();
   const cols = {};
@@ -13,46 +15,80 @@ async function getCols(env, table) {
   return cols;
 }
 
+async function ensurePlayersShape(env) {
+  await env.DB.prepare(`
+    CREATE TABLE IF NOT EXISTS players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      room_code TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      name_norm TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS u_players_room_user ON players(room_code, user_id)`).run();
+  await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS u_players_room_name_norm ON players(room_code, name_norm)`).run();
+}
+
 async function ensureEntriesShape(env) {
-  // Create table if it doesn't exist; we won't DROP anything.
   await env.DB.prepare(`
     CREATE TABLE IF NOT EXISTS entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT
-      -- we add columns below if missing
+      -- columns added below if missing
     )
   `).run();
 
   const cols = await getCols(env, "entries");
   const add = async (name, ddl) => { if (!cols[name]) await env.DB.prepare(`ALTER TABLE entries ADD COLUMN ${name} ${ddl}`).run(); };
 
-  // Make sure these columns exist. We won't change NOT NULL flags on existing columns.
   await add("room_code",  "TEXT");
-  await add("room_id",    "TEXT");
-  await add("player_id",  "TEXT"); // present in your players table; sometimes schemas add this to entries too
-  await add("player",     "TEXT");
+  await add("player_uuid","TEXT"); // required path now
+  await add("player_name","TEXT");
   await add("delta",      "INTEGER DEFAULT 0");
   await add("label",      "TEXT");
   await add("created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
+
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_entries_room ON entries(room_code)`).run();
+  await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_entries_room_playeruuid ON entries(room_code, player_uuid)`).run();
+}
+
+async function requireMember(env, roomCode, userId) {
+  await ensurePlayersShape(env);
+  const m = await env.DB.prepare(`
+    SELECT user_id, name
+    FROM players
+    WHERE room_code = ? AND user_id = ?
+    LIMIT 1
+  `).bind(roomCode, userId).first();
+  return m || null;
 }
 
 // GET /impulse-api/state?roomCode=ABCDE
 export const onRequestGet = async ({ request, env }) => {
   try {
-    const roomCode = new URL(request.url).searchParams.get("roomCode");
+    const roomCode = up(new URL(request.url).searchParams.get("roomCode"));
     if (!roomCode) return json({ error: "roomCode required" }, 400);
 
     await ensureEntriesShape(env);
+
     const rows = await env.DB
       .prepare(`
-        SELECT player, delta, label, created_at
+        SELECT player_name AS player, delta, label, created_at
         FROM entries
-        WHERE room_code = ? OR room_id = ?
+        WHERE room_code = ?
         ORDER BY created_at ASC
       `)
-      .bind(roomCode, roomCode)
+      .bind(roomCode)
       .all();
 
-    const history = rows.results || [];
+    const history = (rows.results || []).map(r => ({
+      player: r.player ?? null,
+      delta: r.delta || 0,
+      label: r.label ?? null,
+      created_at: r.created_at
+    }));
+
     const balance = history.reduce((s, r) => s + (r.delta || 0), 0);
     return json({ ok: true, roomCode, balance, history });
   } catch (e) {
@@ -60,40 +96,39 @@ export const onRequestGet = async ({ request, env }) => {
   }
 };
 
-// POST /impulse-api/state  { roomCode, entry:{ delta, label?, player? } }
+// POST /impulse-api/state
+// Body: { roomCode, entry:{ delta:number, label?:string, userId:string } }
 export const onRequestPost = async ({ request, env }) => {
   try {
-    const { roomCode, entry } = await request.json().catch(() => ({}));
+    const { roomCode: rc, entry } = await request.json().catch(() => ({}));
+    const roomCode = up(rc);
+    const userId = (entry?.userId || "").trim();
+
     if (!roomCode || !entry || typeof entry.delta !== "number") {
       return json({ error: "roomCode and entry{delta} required" }, 400);
+    }
+    if (!userId) {
+      return json({ error: "userId (UUID) required", error_code: "AUTH_REQUIRED" }, 401);
     }
 
     await ensureEntriesShape(env);
 
-    const cols = await getCols(env, "entries");
-    const fields = [];
-    const binds  = [];
-
-    // Satisfy whichever room columns exist (and any NOT NULL constraints)
-    if (cols.room_code) { fields.push("room_code"); binds.push(roomCode); }
-    if (cols.room_id)   { fields.push("room_id");   binds.push(roomCode); }
-
-    // Player fields
-    const playerName = entry.player ?? null;
-    if (cols.player_id) {
-      // stable id from room+name; avoids NULL when NOT NULL constraint exists
-      const pid = `${roomCode}:${playerName ?? "anon"}`;
-      fields.push("player_id"); binds.push(pid);
+    const member = await requireMember(env, roomCode, userId);
+    if (!member) {
+      return json({ error: "Join the room before posting entries.", error_code: "JOIN_REQUIRED" }, 403);
     }
-    if (cols.player) { fields.push("player"); binds.push(playerName); }
 
-    // Other data
-    if (cols.delta) { fields.push("delta"); binds.push(entry.delta); }
-    if (cols.label) { fields.push("label"); binds.push(entry.label ?? null); }
+    // write entry using canonical server-side name
+    await env.DB.prepare(`
+      INSERT INTO entries (room_code, player_uuid, player_name, delta, label, created_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).bind(roomCode, userId, member.name, entry.delta, entry.label ?? null).run();
 
-    const placeholders = fields.map(() => "?").join(", ");
-    const sql = `INSERT INTO entries (${fields.join(", ")}, created_at) VALUES (${placeholders}, CURRENT_TIMESTAMP)`;
-    await env.DB.prepare(sql).bind(...binds).run();
+    // optional: refresh last_seen_at for the member
+    await env.DB.prepare(`
+      UPDATE players SET last_seen_at = CURRENT_TIMESTAMP
+      WHERE room_code = ? AND user_id = ?
+    `).bind(roomCode, userId).run();
 
     return json({ ok: true });
   } catch (e) {
@@ -101,45 +136,45 @@ export const onRequestPost = async ({ request, env }) => {
   }
 };
 
-// DELETE /impulse-api/state?roomCode=ABCDE[&player=Josh]
-// Undo the most recent entry in this room (optionally scoped to player) if within 15 minutes
+// DELETE /impulse-api/state?roomCode=ABCDE&userId=uuid
+// Undo most recent entry for this UUID in this room within 15 minutes
 export const onRequestDelete = async ({ request, env }) => {
-  function json(body, status = 200) {
-    return new Response(JSON.stringify(body), {
-      status, headers: { "content-type": "application/json" }
-    });
-  }
-
   try {
     const url = new URL(request.url);
-    const roomCode = url.searchParams.get("roomCode");
-    const player = url.searchParams.get("player") || null;
+    const roomCode = up(url.searchParams.get("roomCode"));
+    const userId   = (url.searchParams.get("userId") || "").trim();
+
     if (!roomCode) return json({ error: "roomCode required" }, 400);
+    if (!userId)   return json({ error: "userId (UUID) required", error_code: "AUTH_REQUIRED" }, 401);
 
-    // Find latest entry for this room (and player if provided)
-    let sql = "SELECT id, created_at FROM entries WHERE room_code = ?";
-    const args = [roomCode];
-    if (player) { sql += " AND player = ?"; args.push(player); }
-    sql += " ORDER BY created_at DESC LIMIT 1";
+    await ensureEntriesShape(env);
 
-    const row = await env.DB.prepare(sql).bind(...args).first();
+    const member = await requireMember(env, roomCode, userId);
+    if (!member) {
+      return json({ error: "Join the room before undoing entries.", error_code: "JOIN_REQUIRED" }, 403);
+    }
+
+    const row = await env.DB.prepare(`
+      SELECT id, created_at
+      FROM entries
+      WHERE room_code = ? AND player_uuid = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).bind(roomCode, userId).first();
+
     if (!row) return json({ error: "Nothing to undo" }, 404);
 
-    // Enforce 15-minute window
-    // SQLite CURRENT_TIMESTAMP is "YYYY-MM-DD HH:MM:SS". Interpret as UTC.
     const parsed = Date.parse((row.created_at || "").replace(" ", "T") + "Z");
     if (!Number.isFinite(parsed)) return json({ error: "Bad timestamp on last entry" }, 500);
-    const fifteen = 15 * 60 * 1000;
-    if (Date.now() - parsed > fifteen) {
+
+    const fifteenMs = 15 * 60 * 1000;
+    if (Date.now() - parsed > fifteenMs) {
       return json({ error: "Undo window elapsed (15 min)" }, 400);
     }
 
-    await env.DB.prepare("DELETE FROM entries WHERE id = ?").bind(row.id).run();
+    await env.DB.prepare(`DELETE FROM entries WHERE id = ?`).bind(row.id).run();
     return json({ ok: true });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e?.message || String(e) }), {
-      status: 500, headers: { "content-type": "application/json" }
-    });
+    return json({ error: e?.message || String(e) }, 500);
   }
 };
-
