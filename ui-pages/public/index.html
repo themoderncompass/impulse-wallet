@@ -189,7 +189,7 @@
         Terms & Conditions
       </button>
       <span class="sep" aria-hidden="true">|</span>
-      <!-- Contact button added here -->
+      <!-- Contact button -->
       <button id="contact-btn" class="link-like" type="button" aria-haspopup="dialog" aria-controls="contact-modal">
         Contact
       </button>
@@ -284,4 +284,189 @@
         <p>THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. We do not guarantee error-free or uninterrupted operation.</p>
 
         <h3>7. Limitation of liability</h3>
-        <p>TO THE FULLEST EXTENT PERMITTED BY LAW, WE INCLUDING ANY CONTRACTORS OR SERVICE PROVIDERS WE WORK WIT
+        <p>TO THE FULLEST EXTENT PERMITTED BY LAW, WE INCLUDING ANY CONTRACTORS OR SERVICE PROVIDERS WE WORK WITH WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, DATA, OR GOODWILL. OUR TOTAL LIABILITY FOR ANY CLAIM WILL NOT EXCEED <strong>$100</strong> OR THE AMOUNT YOU PAID US IN THE 3 MONTHS BEFORE THE CLAIM WHICHEVER IS GREATER.</p>
+
+        <h3>8. Termination</h3>
+        <p>You may stop using the app at any time. We may suspend or terminate access if you violate these Terms or for operational reasons. Upon termination, sections intended to survive including disclaimers and limitations of liability will continue to apply.</p>
+
+        <h3>9. Changes to Terms</h3>
+        <p>We may update these Terms. Continued use after changes become effective constitutes acceptance.</p>
+
+        <h3>10. Governing law</h3>
+        <p>These Terms are governed by the laws of Texas, USA, without regard to conflicts of law. Venue and jurisdiction lie in the state and federal courts located in Bexar County, Texas unless prohibited by law.</p>
+
+        <h3>11. Contact</h3>
+        <p>Questions about these Terms: <em>replace with your support email</em><br>
+        Business name: <strong>Modern Compass, a brand operated by Josh Imholte</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact modal -->
+  <div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contact-title" hidden>
+    <div class="modal-content" role="document" tabindex="-1">
+      <button id="contact-close" class="modal-close" type="button" aria-label="Close contact form">×</button>
+      <h2 id="contact-title">Get in Touch</h2>
+      <div class="modal-body">
+        <p class="muted">Found a bug? Have feedback? We would love to hear from you.</p>
+
+        <!-- Success State (hidden by default) -->
+        <div id="success-state" class="banner" style="text-align: center; padding: 2rem 1rem;" hidden>
+          <h3 style="margin-top: 0; color: #059669;">Message Sent!</h3>
+          <p class="muted">Thanks for reaching out. We will get back to you soon.</p>
+        </div>
+
+        <!-- Contact Form -->
+        <div id="contact-form">
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-name" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Name</label>
+            <input type="text" id="contact-name" placeholder="Your name" required>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-email" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Email</label>
+            <input type="email" id="contact-email" placeholder="your@email.com" required>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-category" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Category</label>
+            <select id="contact-category" style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff;" required>
+              <option value="">Select a category</option>
+              <option value="app-issue">App Issue</option>
+              <option value="feature-request">Feature Request</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-message" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Message</label>
+            <textarea id="contact-message" placeholder="What is on your mind?" required 
+              style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff; min-height: 120px; resize: vertical; font-family: inherit;"></textarea>
+          </div>
+          
+          <div class="actions">
+            <button type="button" id="cancel-btn" class="secondary">Cancel</button>
+            <button type="button" id="submit-btn" class="primary">Send Message</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </main>
+
+<script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
+<script src="app.js?v=2"></script>
+
+<!-- Contact modal script (runs after app.js, fully defensive) -->
+<script>
+(function() {
+  try {
+    const contactBtn = document.getElementById('contact-btn');
+    const contactModal = document.getElementById('contact-modal');
+    if (!contactBtn || !contactModal) return; // do nothing if markup not present
+
+    const closeBtn = document.getElementById('contact-close');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const contactForm = document.getElementById('contact-form');
+    const successState = document.getElementById('success-state');
+    const modalContent = contactModal.querySelector('.modal-content');
+
+    const nameInput = document.getElementById('contact-name');
+    const emailInput = document.getElementById('contact-email');
+    const categoryInput = document.getElementById('contact-category');
+    const messageInput = document.getElementById('contact-message');
+
+    let isSubmitting = false;
+
+    function updateSubmitButton() {
+      if (!submitBtn) return;
+      submitBtn.disabled = !!isSubmitting;
+      submitBtn.textContent = isSubmitting ? 'Sending...' : 'Send Message';
+    }
+
+    function resetForm() {
+      if (nameInput) nameInput.value = '';
+      if (emailInput) emailInput.value = '';
+      if (categoryInput) categoryInput.value = '';
+      if (messageInput) messageInput.value = '';
+      if (contactForm) contactForm.hidden = false;
+      if (successState) successState.hidden = true;
+      isSubmitting = false;
+      updateSubmitButton();
+    }
+
+    function openModal() {
+      contactModal.hidden = false;
+      if (modalContent) modalContent.focus();
+      if (nameInput) nameInput.focus();
+    }
+
+    function closeModal() {
+      contactModal.hidden = true;
+      resetForm();
+    }
+
+    contactBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Close on outside click
+    contactModal.addEventListener('click', function(e) {
+      if (e.target === contactModal) closeModal();
+    });
+
+    // Close on Escape only while open
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && !contactModal.hidden) closeModal();
+    });
+
+    if (submitBtn) submitBtn.addEventListener('click', async function() {
+      if (isSubmitting) return;
+
+      if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      isSubmitting = true;
+      updateSubmitButton();
+
+      const formData = {
+        name: nameInput.value,
+        email: emailInput.value,
+        category: categoryInput.value,
+        message: messageInput.value,
+        _replyto: emailInput.value,
+        _subject: 'Contact Form - ' + categoryInput.options[categoryInput.selectedIndex].text
+      };
+
+      try {
+        const resp = await fetch('https://formspree.io/f/xgvejjol', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        if (resp.ok) {
+          if (contactForm) contactForm.hidden = true;
+          if (successState) successState.hidden = false;
+          setTimeout(closeModal, 3000);
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Sorry, there was an error sending your message. Please try again.');
+      } finally {
+        isSubmitting = false;
+        updateSubmitButton();
+      }
+    });
+  } catch (e) {
+    console.error('Contact modal init error:', e);
+  }
+})();
+</script>
+
+</body>
+</html>
