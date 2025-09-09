@@ -378,32 +378,35 @@ async function createRoom() {
     const proposed = (el.room.value || "").trim().toUpperCase();
     const code = proposed || genCode();
 
-    // IMPORTANT: include userId so server creates the (room_code, user_id, name) membership
+    // Ensure we have a UUID at call time
+    const uuid = currentUserId || getUserId();
+    if (!uuid) throw new Error("Missing UUID; reload and try again.");
+
+    const payload = { roomCode: code, displayName, userId: uuid };
+    console.debug("POST /room payload:", payload);
+
     await api("/room", {
       method: "POST",
-      body: JSON.stringify({ roomCode: code, displayName, userId: currentUserId })
+      body: JSON.stringify(payload)
     });
 
     roomCode = code;
     el.room.value = roomCode;
 
-    // Save session locally so user can rejoin after refresh
     saveSession(roomCode, displayName);
 
-    // Show Play UI
     document.querySelector(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
     document.getElementById("focus-open")?.classList.remove("hidden");
     document.getElementById("leave-room")?.classList.remove("hidden");
 
-    // Init weekly focus + state
     await initWeeklyFocusUI();
     await refresh();
 
     show(`Room ${roomCode} ready`);
   } catch (e) {
-    // handle duplicate name nicely
-    if (String(e.message || "").includes("DUPLICATE_NAME")) {
+    const msg = String(e.message || "");
+    if (msg.includes("DUPLICATE_NAME") || e.status === 409) {
       alert("That display name is already taken in this room. Please choose another.");
       return;
     }
@@ -418,28 +421,31 @@ async function doJoin() {
     displayName = (el.name.value || "").trim();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
 
-    // Claim/verify membership (will 409 if name taken by another UUID)
+    const uuid = currentUserId || getUserId();
+    if (!uuid) throw new Error("Missing UUID; reload and try again.");
+
+    const payload = { roomCode, displayName, userId: uuid };
+    console.debug("POST /room payload:", payload);
+
     await api("/room", {
       method: "POST",
-      body: JSON.stringify({ roomCode, displayName, userId: currentUserId })
+      body: JSON.stringify(payload)
     });
 
-    // Persist so a refresh keeps the session
     saveSession(roomCode, displayName);
 
-    // Show Play UI
     document.querySelector(".join")?.classList.add("hidden");
     el.play.classList.remove("hidden");
     document.getElementById("focus-open")?.classList.remove("hidden");
     document.getElementById("leave-room")?.classList.remove("hidden");
 
-    // Init focus + state
     await initWeeklyFocusUI();
     await refresh();
 
     show(`Joined ${roomCode}`);
   } catch (e) {
-    if (String(e.message || "").includes("DUPLICATE_NAME")) {
+    const msg = String(e.message || "");
+    if (msg.includes("DUPLICATE_NAME") || e.status === 409) {
       alert("That display name is already taken in this room. Please choose another.");
       return;
     }
