@@ -359,12 +359,13 @@
 
 <!-- Contact modal script (runs after app.js, fully defensive) -->
 <script>
+  
 (function() {
   try {
     const contactBtn = document.getElementById('contact-btn');
     const contactModal = document.getElementById('contact-modal');
     if (!contactBtn || !contactModal) return; // do nothing if markup not present
-
+    const SUPPORT_EMAIL = 'support@themoderncompass.io';
     const closeBtn = document.getElementById('contact-close');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = document.getElementById('submit-btn');
@@ -421,47 +422,49 @@
       if (e.key === 'Escape' && !contactModal.hidden) closeModal();
     });
 
-    if (submitBtn) submitBtn.addEventListener('click', async function() {
-      if (isSubmitting) return;
+    // REPLACE your existing submit handler with this:
+if (submitBtn) submitBtn.addEventListener('click', function () {
+  if (isSubmitting) return;
 
-      if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
-        alert('Please fill in all fields.');
-        return;
-      }
+  // Basic validation
+  if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
+    alert('Please fill in all fields.');
+    return;
+  }
 
-      isSubmitting = true;
-      updateSubmitButton();
+  isSubmitting = true;
+  updateSubmitButton();
 
-      const formData = {
-        name: nameInput.value,
-        email: emailInput.value,
-        category: categoryInput.value,
-        message: messageInput.value,
-        _replyto: emailInput.value,
-        _subject: 'Contact Form - ' + categoryInput.options[categoryInput.selectedIndex].text
-      };
+  // Build subject/body
+  const subject = 'Contact Form - ' + categoryInput.options[categoryInput.selectedIndex].text;
+  const body =
+    'Name: ' + nameInput.value + '\n' +
+    'Email: ' + emailInput.value + '\n' +
+    'Category: ' + categoryInput.value + '\n\n' +
+    'Message:\n' + messageInput.value;
 
-      try {
-        const resp = await fetch('https://formspree.io/f/xgvejjol', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
-        if (resp.ok) {
-          if (contactForm) contactForm.hidden = true;
-          if (successState) successState.hidden = false;
-          setTimeout(closeModal, 3000);
-        } else {
-          throw new Error('Failed to send message');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Sorry, there was an error sending your message. Please try again.');
-      } finally {
-        isSubmitting = false;
-        updateSubmitButton();
-      }
-    });
+  // Open the user’s mail client
+  const href = 'mailto:' + encodeURIComponent(SUPPORT_EMAIL)
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+
+  // Trigger
+  window.location.href = href;
+
+  // Optional: brief success state so the UI doesn’t feel stuck
+  if (contactForm && successState) {
+    contactForm.hidden = true;
+    successState.hidden = false;
+    setTimeout(() => {
+      // close like normal
+      const evt = new Event('click');
+      document.getElementById('cancel-btn')?.dispatchEvent(evt);
+    }, 1200);
+  }
+
+  isSubmitting = false;
+  updateSubmitButton();
+});
   } catch (e) {
     console.error('Contact modal init error:', e);
   }
