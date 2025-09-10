@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ../.wrangler/tmp/bundle-So1vPP/checked-fetch.js
+// ../.wrangler/tmp/bundle-JjgkXL/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -562,7 +562,7 @@ var onRequestPost4 = /* @__PURE__ */ __name(async ({ request, env }) => {
     const roomStatus = await env.DB.prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?").bind(roomCode).first();
     if (displayName) {
       if (!userId) return json({ error: "userId required when displayName is provided" }, 400);
-      if (roomStatus?.invite_only && roomStatus.created_by !== userId) {
+      if (roomStatus?.invite_only) {
         const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
         if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
           return json({
@@ -807,11 +807,13 @@ async function onRequestGet6({ request, env }) {
     if (!room) {
       return json({ error: "Room not found" }, 404);
     }
-    const isCreator = room.created_by === userId;
-    if (!isCreator) {
+    const membership = await env.DB.prepare(`
+      SELECT user_id FROM players WHERE room_code = ? AND user_id = ?
+    `).bind(roomCode, userId).first();
+    if (!membership) {
       return json({
-        error: "Only the room creator can manage room settings",
-        error_code: "NOT_CREATOR"
+        error: "You must be a member of this room to manage settings",
+        error_code: "NOT_MEMBER"
       }, 403);
     }
     const members = await env.DB.prepare(`
@@ -837,7 +839,8 @@ async function onRequestGet6({ request, env }) {
         lastSeen: m.last_seen_at
       })),
       memberCount: members.results?.length || 0,
-      isCreator
+      isCreator: true
+      // MVP: Everyone can manage for launch
     });
   } catch (error) {
     console.error("Room manage info error:", error);
@@ -860,10 +863,13 @@ async function onRequestPost6({ request, env }) {
     if (!room) {
       return json({ error: "Room not found" }, 404);
     }
-    if (room.created_by !== userId) {
+    const membership = await env.DB.prepare(`
+      SELECT user_id FROM players WHERE room_code = ? AND user_id = ?
+    `).bind(roomCode, userId).first();
+    if (!membership) {
       return json({
-        error: "Only the room creator can manage room settings",
-        error_code: "NOT_CREATOR"
+        error: "You must be a member of this room to manage settings",
+        error_code: "NOT_MEMBER"
       }, 403);
     }
     const updates = [];
@@ -1891,7 +1897,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-So1vPP/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-JjgkXL/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1923,7 +1929,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-So1vPP/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-JjgkXL/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

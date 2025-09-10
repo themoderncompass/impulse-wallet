@@ -56,12 +56,16 @@ export async function onRequestGet({ request, env }) {
       return json({ error: 'Room not found' }, 404);
     }
     
-    const isCreator = room.created_by === userId;
+    // For MVP launch: Any room member can manage settings
+    // Check if user is actually in the room
+    const membership = await env.DB.prepare(`
+      SELECT user_id FROM players WHERE room_code = ? AND user_id = ?
+    `).bind(roomCode, userId).first();
     
-    if (!isCreator) {
+    if (!membership) {
       return json({ 
-        error: 'Only the room creator can manage room settings',
-        error_code: 'NOT_CREATOR'
+        error: 'You must be a member of this room to manage settings',
+        error_code: 'NOT_MEMBER'
       }, 403);
     }
     
@@ -90,7 +94,7 @@ export async function onRequestGet({ request, env }) {
         lastSeen: m.last_seen_at
       })),
       memberCount: members.results?.length || 0,
-      isCreator
+      isCreator: true  // MVP: Everyone can manage for launch
     });
     
   } catch (error) {
@@ -120,10 +124,16 @@ export async function onRequestPost({ request, env }) {
       return json({ error: 'Room not found' }, 404);
     }
     
-    if (room.created_by !== userId) {
+    // For MVP launch: Any room member can manage settings
+    // Check if user is actually in the room
+    const membership = await env.DB.prepare(`
+      SELECT user_id FROM players WHERE room_code = ? AND user_id = ?
+    `).bind(roomCode, userId).first();
+    
+    if (!membership) {
       return json({ 
-        error: 'Only the room creator can manage room settings',
-        error_code: 'NOT_CREATOR'
+        error: 'You must be a member of this room to manage settings',
+        error_code: 'NOT_MEMBER'
       }, 403);
     }
     

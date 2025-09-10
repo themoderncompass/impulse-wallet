@@ -1226,17 +1226,18 @@ document.addEventListener('DOMContentLoaded', initHistoryModal);
 async function checkIfRoomCreator() {
   if (!roomCode || !currentUserId) return;
   
+  // MVP Launch: Show room management for all room members
   try {
     const response = await fetch(`${API_BASE}/room-manage?roomCode=${roomCode}&userId=${currentUserId}`);
     if (response.ok) {
-      // User is room creator, show room settings button
+      // User is room member, show room settings button
       document.getElementById('room-manage-open')?.classList.remove('hidden');
     } else {
-      // User is not creator, hide button
+      // User is not a room member, hide button
       document.getElementById('room-manage-open')?.classList.add('hidden');
     }
   } catch (error) {
-    console.log('Could not check room creator status:', error.message);
+    console.log('Could not check room member status:', error.message);
     document.getElementById('room-manage-open')?.classList.add('hidden');
   }
 }
