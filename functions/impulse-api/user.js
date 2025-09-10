@@ -1,12 +1,5 @@
 // Create: functions/impulse-api/user.js
-
-// Local json helper
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" }
-  });
-}
+import { json, upsertWithRetry, logEvent } from "./_util.js";
 
 async function ensureUserTable(env) {
   // Create users table if it doesn't exist
@@ -33,15 +26,23 @@ export async function onRequestPost({ request, env }) {
 
     await ensureUserTable(env);
 
-    // Use UPSERT (INSERT OR REPLACE) to handle existing users
-    const result = await env.DB.prepare(`
+    // Use UPSERT with retry logic to handle existing users
+    const result = await upsertWithRetry(env, `
       INSERT INTO users (id, email, display_name, updated_at)
       VALUES (?, ?, ?, datetime('now'))
       ON CONFLICT(id) DO UPDATE SET
         email = COALESCE(excluded.email, email),
         display_name = COALESCE(excluded.display_name, display_name),
         updated_at = datetime('now')
-    `).bind(userId, email, displayName).run();
+    `, [userId, email, displayName]);
+    
+    // Log user creation/update event
+    await logEvent(env, 'user_upserted', {
+      userId,
+      email: email ? '[redacted]' : null, // Don't log actual email for privacy
+      displayName,
+      isNewUser: result.changes > 0
+    });
 
     return json({
       userId,
