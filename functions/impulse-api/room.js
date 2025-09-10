@@ -195,8 +195,8 @@ export const onRequestPost = async ({ request, env }) => {
     if (displayName) {
       if (!userId) return json({ error: "userId required when displayName is provided" }, 400);
       
-      // Check if room is invite-only (simplified for MVP launch)
-      if (roomStatus?.invite_only) {
+      // Check if room is invite-only (room creator can always join)
+      if (roomStatus?.invite_only && roomStatus.created_by !== userId) {
         // Get the room's invite code for validation
         const roomWithInvite = await env.DB
           .prepare("SELECT invite_code FROM rooms WHERE code = ?")

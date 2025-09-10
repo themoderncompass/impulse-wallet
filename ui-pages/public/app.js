@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('leave-room')?.classList.remove('hidden');
   
   // Show room settings if user is room creator (will check in API call)
-  checkIfRoomCreator();
+  await checkIfRoomCreator();
 
   // load current state
   try { await initWeeklyFocusUI(); } catch {}
@@ -542,7 +542,7 @@ async function doJoin() {
     document.getElementById("leave-room")?.classList.remove("hidden");
     
     // Check if user is room creator to show room management button
-    checkIfRoomCreator();
+    await checkIfRoomCreator();
 
     await initWeeklyFocusUI();
     await refresh();

@@ -594,7 +594,7 @@ var onRequestPost4 = /* @__PURE__ */ __name2(async ({ request, env }) => {
     const roomStatus = await env.DB.prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?").bind(roomCode).first();
     if (displayName) {
       if (!userId) return json({ error: "userId required when displayName is provided" }, 400);
-      if (roomStatus?.invite_only) {
+      if (roomStatus?.invite_only && roomStatus.created_by !== userId) {
         const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
         if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
           return json({
