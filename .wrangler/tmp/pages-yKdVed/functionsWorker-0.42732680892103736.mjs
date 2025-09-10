@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// ../.wrangler/tmp/bundle-NIqFod/checked-fetch.js
+// ../.wrangler/tmp/bundle-So1vPP/checked-fetch.js
 var urls = /* @__PURE__ */ new Set();
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
@@ -562,15 +562,6 @@ var onRequestPost4 = /* @__PURE__ */ __name(async ({ request, env }) => {
     const roomStatus = await env.DB.prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?").bind(roomCode).first();
     if (displayName) {
       if (!userId) return json({ error: "userId required when displayName is provided" }, 400);
-      if (roomStatus?.is_locked) {
-        const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
-        if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
-          return json({
-            error: "This room is locked. Please provide a valid invite code to join.",
-            error_code: "ROOM_LOCKED"
-          }, 403);
-        }
-      }
       if (roomStatus?.invite_only && roomStatus.created_by !== userId) {
         const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
         if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
@@ -810,7 +801,7 @@ async function onRequestGet6({ request, env }) {
     if (!roomCode) return json({ error: "roomCode required" }, 400);
     if (!userId) return json({ error: "userId required" }, 400);
     const room = await env.DB.prepare(`
-      SELECT code, created_at, is_locked, invite_only, created_by, max_members, invite_code
+      SELECT code, created_at, invite_only, created_by, max_members, invite_code
       FROM rooms WHERE code = ?
     `).bind(roomCode).first();
     if (!room) {
@@ -834,7 +825,6 @@ async function onRequestGet6({ request, env }) {
       room: {
         code: room.code,
         createdAt: room.created_at,
-        isLocked: !!room.is_locked,
         inviteOnly: !!room.invite_only,
         createdBy: room.created_by,
         maxMembers: room.max_members,
@@ -861,7 +851,7 @@ async function onRequestPost6({ request, env }) {
     const body = await request.json().catch(() => ({}));
     const roomCode = up4(body.roomCode || "");
     const userId = (body.userId || "").trim();
-    const { isLocked, inviteOnly, maxMembers } = body;
+    const { inviteOnly, maxMembers } = body;
     if (!roomCode) return json({ error: "roomCode required" }, 400);
     if (!userId) return json({ error: "userId required" }, 400);
     const room = await env.DB.prepare(`
@@ -878,10 +868,6 @@ async function onRequestPost6({ request, env }) {
     }
     const updates = [];
     const values = [];
-    if (typeof isLocked === "boolean") {
-      updates.push("is_locked = ?");
-      values.push(isLocked ? 1 : 0);
-    }
     if (typeof inviteOnly === "boolean") {
       updates.push("invite_only = ?");
       values.push(inviteOnly ? 1 : 0);
@@ -900,10 +886,10 @@ async function onRequestPost6({ request, env }) {
     await logEvent(env, "room_settings_changed", {
       roomCode,
       userId,
-      changes: { isLocked, inviteOnly, maxMembers }
+      changes: { inviteOnly, maxMembers }
     });
     const updatedRoom = await env.DB.prepare(`
-      SELECT code, created_at, is_locked, invite_only, created_by, max_members
+      SELECT code, created_at, invite_only, created_by, max_members
       FROM rooms WHERE code = ?
     `).bind(roomCode).first();
     return json({
@@ -911,7 +897,6 @@ async function onRequestPost6({ request, env }) {
       room: {
         code: updatedRoom.code,
         createdAt: updatedRoom.created_at,
-        isLocked: !!updatedRoom.is_locked,
         inviteOnly: !!updatedRoom.invite_only,
         createdBy: updatedRoom.created_by,
         maxMembers: updatedRoom.max_members
@@ -1906,7 +1891,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-NIqFod/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-So1vPP/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -1938,7 +1923,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-NIqFod/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-So1vPP/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

@@ -594,15 +594,6 @@ var onRequestPost4 = /* @__PURE__ */ __name2(async ({ request, env }) => {
     const roomStatus = await env.DB.prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?").bind(roomCode).first();
     if (displayName) {
       if (!userId) return json({ error: "userId required when displayName is provided" }, 400);
-      if (roomStatus?.is_locked) {
-        const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
-        if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
-          return json({
-            error: "This room is locked. Please provide a valid invite code to join.",
-            error_code: "ROOM_LOCKED"
-          }, 403);
-        }
-      }
       if (roomStatus?.invite_only && roomStatus.created_by !== userId) {
         const roomWithInvite = await env.DB.prepare("SELECT invite_code FROM rooms WHERE code = ?").bind(roomCode).first();
         if (!providedInviteCode || providedInviteCode !== roomWithInvite?.invite_code) {
@@ -844,7 +835,7 @@ async function onRequestGet6({ request, env }) {
     if (!roomCode) return json({ error: "roomCode required" }, 400);
     if (!userId) return json({ error: "userId required" }, 400);
     const room = await env.DB.prepare(`
-      SELECT code, created_at, is_locked, invite_only, created_by, max_members, invite_code
+      SELECT code, created_at, invite_only, created_by, max_members, invite_code
       FROM rooms WHERE code = ?
     `).bind(roomCode).first();
     if (!room) {
@@ -868,7 +859,6 @@ async function onRequestGet6({ request, env }) {
       room: {
         code: room.code,
         createdAt: room.created_at,
-        isLocked: !!room.is_locked,
         inviteOnly: !!room.invite_only,
         createdBy: room.created_by,
         maxMembers: room.max_members,
@@ -896,7 +886,7 @@ async function onRequestPost6({ request, env }) {
     const body = await request.json().catch(() => ({}));
     const roomCode = up4(body.roomCode || "");
     const userId = (body.userId || "").trim();
-    const { isLocked, inviteOnly, maxMembers } = body;
+    const { inviteOnly, maxMembers } = body;
     if (!roomCode) return json({ error: "roomCode required" }, 400);
     if (!userId) return json({ error: "userId required" }, 400);
     const room = await env.DB.prepare(`
@@ -913,10 +903,6 @@ async function onRequestPost6({ request, env }) {
     }
     const updates = [];
     const values = [];
-    if (typeof isLocked === "boolean") {
-      updates.push("is_locked = ?");
-      values.push(isLocked ? 1 : 0);
-    }
     if (typeof inviteOnly === "boolean") {
       updates.push("invite_only = ?");
       values.push(inviteOnly ? 1 : 0);
@@ -935,10 +921,10 @@ async function onRequestPost6({ request, env }) {
     await logEvent(env, "room_settings_changed", {
       roomCode,
       userId,
-      changes: { isLocked, inviteOnly, maxMembers }
+      changes: { inviteOnly, maxMembers }
     });
     const updatedRoom = await env.DB.prepare(`
-      SELECT code, created_at, is_locked, invite_only, created_by, max_members
+      SELECT code, created_at, invite_only, created_by, max_members
       FROM rooms WHERE code = ?
     `).bind(roomCode).first();
     return json({
@@ -946,7 +932,6 @@ async function onRequestPost6({ request, env }) {
       room: {
         code: updatedRoom.code,
         createdAt: updatedRoom.created_at,
-        isLocked: !!updatedRoom.is_locked,
         inviteOnly: !!updatedRoom.invite_only,
         createdBy: updatedRoom.created_by,
         maxMembers: updatedRoom.max_members

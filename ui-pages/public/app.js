@@ -641,7 +641,11 @@ el.minus?.addEventListener("click", () => submit(-1));
 el.undo?.addEventListener("click", undoLast);
 el.months?.addEventListener("change", loadHistory);
 el.csv?.addEventListener("click", exportCSV);
-el.leaveBtn?.addEventListener("click", () => leaveRoom());
+el.leaveBtn?.addEventListener("click", () => {
+  if (confirm("Are you sure you want to leave this room? You can rejoin anytime with the same room code.")) {
+    leaveRoom();
+  }
+});
 
 
 // Instructions modal wiring
@@ -1274,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.ok) {
         // Update UI with current settings
         document.getElementById('room-code-display').textContent = data.room.code;
-        document.getElementById('room-locked').checked = data.room.isLocked;
+        // Room locking removed - only invite-only mode supported
         document.getElementById('room-invite-only').checked = data.room.inviteOnly;
         document.getElementById('room-max-members').value = data.room.maxMembers;
         document.getElementById('member-count').textContent = data.memberCount;
@@ -1306,7 +1310,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const settings = {
         roomCode,
         userId: currentUserId,
-        isLocked: document.getElementById('room-locked').checked,
+        // isLocked removed - only invite-only mode supported
         inviteOnly: document.getElementById('room-invite-only').checked,
         maxMembers: parseInt(document.getElementById('room-max-members').value)
       };

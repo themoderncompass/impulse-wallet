@@ -151,8 +151,10 @@
       <div id="play" class="hidden">
         <div class="meta">
           <span id="week"></span>
-          <button id="undo" class="secondary">Undo last (15 min)</button>
-           <button id="leave-room" class="secondary hidden">Leave Room</button>
+          <div class="button-group">
+            <button id="undo" class="secondary">Undo last (15 min)</button>
+            <button id="leave-room" class="secondary hidden">Leave Room</button>
+          </div>
         </div>
 
         <!-- Weekly Focus chips appear here once set -->
@@ -468,24 +470,16 @@
           <input type="text" id="invite-code-value" readonly value="—" class="invite-code-input">
           <button id="copy-invite-code" class="secondary" title="Copy invite code">📋 Copy</button>
         </div>
-        <p class="muted">Share this code with others to let them join your room, even when locked.</p>
+        <p class="muted">Share this code with others to let them join your invite-only room.</p>
       </div>
       
       <div class="room-settings">
         <div class="setting-group">
           <label class="setting-label">
-            <input type="checkbox" id="room-locked"> 
-            <span>🔒 Lock Room</span>
-          </label>
-          <p class="setting-desc">Prevent new members from joining</p>
-        </div>
-        
-        <div class="setting-group">
-          <label class="setting-label">
             <input type="checkbox" id="room-invite-only"> 
             <span>👥 Invite Only</span>
           </label>
-          <p class="setting-desc">Only you can add new members</p>
+          <p class="setting-desc">Require invite code for new members (you can always join without a code)</p>
         </div>
         
         <div class="setting-group">

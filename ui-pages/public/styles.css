@@ -203,6 +203,12 @@ button.bad  { background: #d33; color: #fff; border-color: #c22 }
   margin-bottom: .5rem;
 }
 
+.button-group {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
 .controls {
   display: flex;
   gap: .75rem;
