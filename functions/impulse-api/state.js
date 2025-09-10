@@ -1,10 +1,5 @@
 // functions/impulse-api/state.js
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" }
-  });
-}
+import { json, upsertWithRetry, logEvent } from "./_util.js";
 
 const up = (s) => (s || "").trim().toUpperCase();
 
@@ -118,17 +113,26 @@ export const onRequestPost = async ({ request, env }) => {
       return json({ error: "Join the room before posting entries.", error_code: "JOIN_REQUIRED" }, 403);
     }
 
-    // write entry using canonical server-side name
-    await env.DB.prepare(`
+    // write entry using canonical server-side name with retry logic
+    await upsertWithRetry(env, `
       INSERT INTO entries (room_code, player_uuid, player_name, delta, label, created_at)
       VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).bind(roomCode, userId, member.name, entry.delta, entry.label ?? null).run();
+    `, [roomCode, userId, member.name, entry.delta, entry.label ?? null]);
+    
+    // Log entry creation event
+    await logEvent(env, 'entry_created', {
+      roomCode,
+      userId,
+      delta: entry.delta,
+      label: entry.label,
+      playerName: member.name
+    });
 
-    // optional: refresh last_seen_at for the member
-    await env.DB.prepare(`
+    // optional: refresh last_seen_at for the member with retry logic
+    await upsertWithRetry(env, `
       UPDATE players SET last_seen_at = CURRENT_TIMESTAMP
       WHERE room_code = ? AND user_id = ?
-    `).bind(roomCode, userId).run();
+    `, [roomCode, userId]);
 
     return json({ ok: true });
   } catch (e) {
@@ -172,7 +176,15 @@ export const onRequestDelete = async ({ request, env }) => {
       return json({ error: "Undo window elapsed (15 min)" }, 400);
     }
 
-    await env.DB.prepare(`DELETE FROM entries WHERE id = ?`).bind(row.id).run();
+    await upsertWithRetry(env, `DELETE FROM entries WHERE id = ?`, [row.id]);
+    
+    // Log entry deletion event
+    await logEvent(env, 'entry_deleted', {
+      roomCode,
+      userId,
+      entryId: row.id,
+      deletedAt: new Date().toISOString()
+    });
     return json({ ok: true });
   } catch (e) {
     return json({ error: e?.message || String(e) }, 500);

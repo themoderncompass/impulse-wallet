@@ -1,11 +1,5 @@
 // functions/impulse-api/focus.js
-
-function json(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" }
-  });
-}
+import { json, upsertWithRetry, logEvent } from "./_util.js";
 
 const up = (s) => (s || "").trim().toUpperCase();
 
@@ -157,16 +151,30 @@ export async function onRequestPost({ request, env }) {
 
     if (exists) return json({ error: "Weekly focus already set for this week" }, 409);
 
-    await env.DB.prepare(`
+    // Use UPSERT instead of INSERT to handle edge cases better
+    await upsertWithRetry(env, `
       INSERT INTO weekly_focus (room_code, player_uuid, player_name, week_key, areas, locked)
       VALUES (?, ?, ?, ?, ?, 1)
-    `).bind(roomCode, userId, member.name, weekKey, JSON.stringify(clean)).run();
+      ON CONFLICT(room_code, player_uuid, week_key) DO UPDATE SET
+        areas = excluded.areas,
+        player_name = excluded.player_name,
+        created_at = CURRENT_TIMESTAMP
+    `, [roomCode, userId, member.name, weekKey, JSON.stringify(clean)]);
+    
+    // Log focus setting event
+    await logEvent(env, 'focus_set', {
+      roomCode,
+      userId,
+      weekKey,
+      areasCount: clean.length,
+      playerName: member.name
+    });
 
-    // optional: bump last_seen_at
-    await env.DB.prepare(`
+    // optional: bump last_seen_at with retry logic
+    await upsertWithRetry(env, `
       UPDATE players SET last_seen_at = CURRENT_TIMESTAMP
       WHERE room_code = ? AND user_id = ?
-    `).bind(roomCode, userId).run();
+    `, [roomCode, userId]);
 
     return json({ roomCode, userId, weekKey, areas: clean, locked: true }, 201);
   } catch (e) {

@@ -53,6 +53,7 @@ async function createUserRecord(userId) {
 
 // Initialize user ID when app loads
 let currentUserId = null;
+let currentHistoryData = [];
 
 function initUserSystem() {
   currentUserId = getUserId();
@@ -193,6 +194,7 @@ const $ = (sel) => document.querySelector(sel);
 const el = {
   room: $("#room"),
   name: $("#name"),
+  inviteCode: $("#invite-code"),
   create: $("#create"),
   join: $("#join"),
   play: $("#play"),
@@ -206,7 +208,14 @@ const el = {
   months: $("#months"),
   mine: $("#mine tbody"),
   csv: $("#csv"),
-   leaveBtn: document.getElementById("leave-room")
+  leaveBtn: document.getElementById("leave-room"),
+  historyOpen: $("#history-open"),
+  historyModal: $("#history-modal"),
+  historyClose: $("#history-close"),
+  historyTable: $("#history-tbody"),
+  historyMonths: $("#history-months"),
+  historyCsv: $("#history-csv"),
+  historyRefresh: $("#history-refresh")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -229,6 +238,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   el.play?.classList.remove('hidden');
   document.getElementById('focus-open')?.classList.remove('hidden');
   document.getElementById('leave-room')?.classList.remove('hidden');
+  
+  // Show room settings if user is room creator (will check in API call)
+  checkIfRoomCreator();
 
   // load current state
   try { await initWeeklyFocusUI(); } catch {}
@@ -250,12 +262,76 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error((data && data.error) || `${r.status} ${txt.slice(0, 120)}`);
   return data || {};
 }
+// Enhanced notification system
+let notificationId = 0;
+
+function showNotification(message, type = 'success', duration = 4000) {
+  const container = document.getElementById('notification-container');
+  if (!container) {
+    // Fallback to old banner system
+    return show(message, type === 'error');
+  }
+  
+  const id = ++notificationId;
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.dataset.id = id;
+  
+  const icons = {
+    success: '✅',
+    error: '❌', 
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+  
+  const titles = {
+    success: 'Success',
+    error: 'Error',
+    warning: 'Warning', 
+    info: 'Info'
+  };
+  
+  notification.innerHTML = `
+    <div class="notification-header">
+      <span class="notification-icon">${icons[type] || icons.info}</span>
+      <span>${titles[type] || titles.info}</span>
+      <button class="notification-close" onclick="closeNotification(${id})" aria-label="Close">×</button>
+    </div>
+    <div class="notification-body">${message}</div>
+  `;
+  
+  container.appendChild(notification);
+  
+  // Trigger show animation
+  setTimeout(() => notification.classList.add('show'), 10);
+  
+  // Auto close
+  if (duration > 0) {
+    setTimeout(() => closeNotification(id), duration);
+  }
+  
+  return id;
+}
+
+function closeNotification(id) {
+  const notification = document.querySelector(`[data-id="${id}"]`);
+  if (!notification) return;
+  
+  notification.classList.remove('show');
+  setTimeout(() => notification.remove(), 300);
+}
+
+// Legacy banner show/hide (keeping for backward compatibility)
 function show(msg, isLoss = false) {
-  if (!el.banner) return;
-  el.banner.textContent = msg;
-  el.banner.classList.toggle("banner-loss", !!isLoss);
-  el.banner.classList.remove("hidden");
-  setTimeout(() => el.banner.classList.add("hidden"), 2200);
+  if (el.banner) {
+    el.banner.textContent = msg;
+    el.banner.classList.toggle("banner-loss", !!isLoss);
+    el.banner.classList.remove("hidden");
+    setTimeout(() => el.banner.classList.add("hidden"), 2200);
+  }
+  
+  // Also show as modern notification
+  showNotification(msg, isLoss ? 'error' : 'success');
 }
 // Normalize timestamps coming from API (UTC) into Date objects in user's local time.
 // - Epoch numbers: new Date(number)
@@ -355,10 +431,29 @@ const when = row.created_at
     el.mine.appendChild(tr);
   });
 
-  // Weekly milestone banners based on this week's totals only
+  // Weekly milestone banners and celebrations based on this week's totals only
   const me = stats.get(displayName);
-  if (me && me.balance >= 20) show("You hit +$20 this week. Keep going.");
-  if (me && me.balance <= -20) show("You hit −$20 this week. Keep tracking.", true);
+  if (me) {
+    // Celebration for reaching +$20 (only trigger once per milestone achievement)
+    if (me.balance >= 20 && lastCelebrationBalance !== me.balance) {
+      show("You hit +$20 this week. Keep going.");
+      showCelebration();
+      lastCelebrationBalance = me.balance;
+    }
+    
+    // Warning for hitting -$20 (only trigger once per milestone)
+    if (me.balance <= -20 && lastWarningBalance !== me.balance) {
+      show("You hit −$20 this week. Keep tracking.", true);
+      showWarning();
+      lastWarningBalance = me.balance;
+    }
+    
+    // Reset milestone tracking if balance changes significantly
+    if (me.balance > -20 && me.balance < 20) {
+      lastCelebrationBalance = null;
+      lastWarningBalance = null;
+    }
+  }
 }
 
 
@@ -368,6 +463,9 @@ async function refresh() {
   try {
     const data = await api(`/state?roomCode=${encodeURIComponent(roomCode)}`);
     paint(data);
+    
+    // Check if user is room creator to show/hide room management button
+    await checkIfRoomCreator();
   } catch (e) {
     console.error("Refresh failed:", e);
   }
@@ -419,12 +517,16 @@ async function doJoin() {
   try {
     roomCode = (el.room.value || "").trim().toUpperCase();
     displayName = (el.name.value || "").trim();
+    const inviteCode = (el.inviteCode.value || "").trim().toUpperCase();
     if (!roomCode || !displayName) throw new Error("Enter room code and display name");
 
     const uuid = currentUserId || getUserId();
     if (!uuid) throw new Error("Missing UUID; reload and try again.");
 
     const payload = { roomCode, displayName, userId: uuid };
+    if (inviteCode) {
+      payload.inviteCode = inviteCode;
+    }
     console.debug("POST /room payload:", payload);
 
     await api("/room", {
@@ -438,6 +540,9 @@ async function doJoin() {
     el.play.classList.remove("hidden");
     document.getElementById("focus-open")?.classList.remove("hidden");
     document.getElementById("leave-room")?.classList.remove("hidden");
+    
+    // Check if user is room creator to show room management button
+    checkIfRoomCreator();
 
     await initWeeklyFocusUI();
     await refresh();
@@ -879,3 +984,535 @@ setInterval(() => {
   wire('open-privacy', 'privacy-modal', 'privacy-close');
   wire('open-terms',   'terms-modal',   'terms-close');
 })();
+
+// === History Modal Implementation ===
+function initHistoryModal() {
+  const historyOpen = document.getElementById('history-open');
+  const historyModal = document.getElementById('history-modal');
+  const historyClose = document.getElementById('history-close');
+  const historyTable = document.getElementById('history-tbody');
+  const historyMonths = document.getElementById('history-months');
+  const historyCsv = document.getElementById('history-csv');
+  const historyRefresh = document.getElementById('history-refresh');
+  
+  console.log('History modal elements:', { historyOpen, historyModal, historyClose });
+  
+  if (!historyOpen || !historyModal || !historyClose) {
+    console.warn('History modal elements not found');
+    return;
+  }
+  
+  let lastFocus = null;
+  
+  function openHistoryModal() {
+    lastFocus = document.activeElement;
+    historyModal.hidden = false;
+    historyModal.querySelector('.modal-content')?.focus();
+    document.addEventListener('keydown', onHistoryKey);
+    loadHistoryData();
+  }
+  
+  function closeHistoryModal() {
+    historyModal.hidden = true;
+    document.removeEventListener('keydown', onHistoryKey);
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  
+  function onHistoryKey(e) {
+    if (e.key === 'Escape') closeHistoryModal();
+  }
+  
+  async function loadHistoryData() {
+    if (!roomCode) return;
+    
+    try {
+      const data = await api(`/state?roomCode=${roomCode}`);
+      currentHistoryData = Array.isArray(data.history) ? data.history : [];
+      
+      // Update stats
+      updateHistoryStats();
+      
+      // Render table
+      renderHistoryTable();
+      
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      showNotification('Failed to load history: ' + error.message, 'error');
+    }
+  }
+  
+  function updateHistoryStats() {
+    const myHistory = currentHistoryData.filter(row => row.player === displayName);
+    const totalEntries = myHistory.length;
+    const currentBalance = myHistory.reduce((sum, row) => sum + (row.delta || 0), 0);
+    
+    // Calculate best streak
+    let bestStreak = 0;
+    let currentStreak = 0;
+    for (const entry of myHistory) {
+      if (entry.delta > 0) {
+        currentStreak++;
+        bestStreak = Math.max(bestStreak, currentStreak);
+      } else {
+        currentStreak = 0;
+      }
+    }
+    
+    // Update UI
+    const totalEl = document.getElementById('total-entries');
+    const balanceEl = document.getElementById('current-balance');  
+    const streakEl = document.getElementById('best-streak');
+    
+    if (totalEl) totalEl.textContent = totalEntries;
+    if (balanceEl) balanceEl.textContent = `$${currentBalance}`;
+    if (streakEl) streakEl.textContent = bestStreak;
+  }
+  
+  function renderHistoryTable() {
+    if (!historyTable) return;
+    
+    const monthsFilter = historyMonths?.value || '12';
+    const myHistory = currentHistoryData.filter(row => row.player === displayName);
+    
+    // Apply time filter
+    let filteredHistory = myHistory;
+    if (monthsFilter !== 'all') {
+      const monthsAgo = new Date();
+      monthsAgo.setMonth(monthsAgo.getMonth() - parseInt(monthsFilter));
+      filteredHistory = myHistory.filter(row => {
+        const entryDate = new Date(row.created_at);
+        return entryDate >= monthsAgo;
+      });
+    }
+    
+    // Sort newest first
+    filteredHistory.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    // Clear table
+    historyTable.innerHTML = '';
+    
+    // Show empty state if no data
+    const emptyState = document.getElementById('history-empty');
+    if (filteredHistory.length === 0) {
+      if (emptyState) emptyState.hidden = false;
+      return;
+    } else {
+      if (emptyState) emptyState.hidden = true;
+    }
+    
+    // Populate table
+    filteredHistory.forEach(row => {
+      const tr = document.createElement('tr');
+      
+      const when = window.formatTimestamp(row.created_at);
+      const type = row.delta > 0 ? 'Deposit' : 'Withdrawal';
+      const typeClass = row.delta > 0 ? 'positive' : 'negative';
+      const amount = `$${Math.abs(row.delta)}`;
+      const note = row.label || '—';
+      
+      tr.innerHTML = `
+        <td>${when}</td>
+        <td><span class="entry-type ${typeClass}">${type}</span></td>
+        <td>${amount}</td>
+        <td>${note}</td>
+        <td>
+          <button class="action-btn" onclick="viewEntryDetails('${row.created_at}')">
+            Details
+          </button>
+        </td>
+      `;
+      
+      historyTable.appendChild(tr);
+    });
+  }
+  
+  function formatTimestamp(timestamp) {
+    try {
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: '2-digit',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return timestamp || '—';
+    }
+  }
+  
+  function exportHistoryCSV() {
+    const myHistory = currentHistoryData.filter(row => row.player === displayName);
+    
+    if (myHistory.length === 0) {
+      showNotification('No history to export', 'warning');
+      return;
+    }
+    
+    const headers = ['Date', 'Type', 'Amount', 'Note'];
+    const rows = [headers.join(',')];
+    
+    myHistory.forEach(row => {
+      const date = window.formatTimestamp(row.created_at);
+      const type = row.delta > 0 ? 'Deposit' : 'Withdrawal';
+      const amount = Math.abs(row.delta);
+      const note = (row.label || '').replace(/,/g, ';'); // Replace commas to avoid CSV issues
+      
+      rows.push(`"${date}","${type}","${amount}","${note}"`);
+    });
+    
+    const csvContent = rows.join('\\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `impulse-wallet-history-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    showNotification('History exported successfully!', 'success');
+  }
+  
+  // Event listeners
+  historyOpen.addEventListener('click', openHistoryModal);
+  historyClose.addEventListener('click', closeHistoryModal);
+  historyModal.addEventListener('click', (e) => {
+    if (e.target === historyModal) closeHistoryModal();
+  });
+  
+  if (historyMonths) {
+    historyMonths.addEventListener('change', renderHistoryTable);
+  }
+  
+  if (historyCsv) {
+    historyCsv.addEventListener('click', exportHistoryCSV);
+  }
+  
+  if (historyRefresh) {
+    historyRefresh.addEventListener('click', loadHistoryData);
+  }
+  
+  // Newsletter dismiss functionality
+  const newsletterDismiss = document.getElementById('newsletter-dismiss');
+  const newsletterSection = document.querySelector('.newsletter-section');
+  
+  if (newsletterDismiss && newsletterSection) {
+    newsletterDismiss.addEventListener('click', () => {
+      newsletterSection.classList.add('dismissed');
+      
+      // Remember user dismissed it (don't show again this session)
+      try {
+        sessionStorage.setItem('newsletter-dismissed', 'true');
+      } catch (e) {
+        // Ignore storage errors
+      }
+    });
+    
+    // Always show newsletter when history modal opens (removed session storage check)
+    // This ensures it appears every time for maximum visibility
+  }
+}
+
+// Initialize history modal after DOM is loaded
+document.addEventListener('DOMContentLoaded', initHistoryModal);
+
+// === Room Management ===
+async function checkIfRoomCreator() {
+  if (!roomCode || !currentUserId) return;
+  
+  try {
+    const response = await fetch(`${API_BASE}/room-manage?roomCode=${roomCode}&userId=${currentUserId}`);
+    if (response.ok) {
+      // User is room creator, show room settings button
+      document.getElementById('room-manage-open')?.classList.remove('hidden');
+    } else {
+      // User is not creator, hide button
+      document.getElementById('room-manage-open')?.classList.add('hidden');
+    }
+  } catch (error) {
+    console.log('Could not check room creator status:', error.message);
+    document.getElementById('room-manage-open')?.classList.add('hidden');
+  }
+}
+
+// Room Management Modal - Wait for DOM to be ready
+document.addEventListener('DOMContentLoaded', function() {
+  const openBtn = document.getElementById('room-manage-open');
+  const modal = document.getElementById('room-manage-modal');
+  const closeBtn = document.getElementById('room-manage-close');
+  const cancelBtn = document.getElementById('cancel-room-settings');
+  const saveBtn = document.getElementById('save-room-settings');
+  
+  if (!openBtn || !modal || !closeBtn) {
+    console.warn('Room management modal elements not found:', { openBtn: !!openBtn, modal: !!modal, closeBtn: !!closeBtn });
+    return;
+  }
+  
+  let lastFocus = null;
+  
+  function openModal() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    modal.querySelector('.modal-content')?.focus();
+    loadRoomSettings();
+  }
+  
+  function closeModal() {
+    modal.hidden = true;
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+  }
+  
+  async function loadRoomSettings() {
+    if (!roomCode || !currentUserId) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/room-manage?roomCode=${roomCode}&userId=${currentUserId}`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        // Update UI with current settings
+        document.getElementById('room-code-display').textContent = data.room.code;
+        document.getElementById('room-locked').checked = data.room.isLocked;
+        document.getElementById('room-invite-only').checked = data.room.inviteOnly;
+        document.getElementById('room-max-members').value = data.room.maxMembers;
+        document.getElementById('member-count').textContent = data.memberCount;
+        document.getElementById('invite-code-value').value = data.room.inviteCode || '—';
+        
+        // Update members list
+        const membersList = document.getElementById('members-list');
+        membersList.innerHTML = '';
+        data.members.forEach(member => {
+          const div = document.createElement('div');
+          div.className = 'member-item';
+          const isCreator = member.userId === currentUserId;
+          div.innerHTML = `
+            <span class="member-name">${member.name}</span>
+            <span class="member-role">${isCreator ? 'Creator' : 'Member'}</span>
+          `;
+          membersList.appendChild(div);
+        });
+      }
+    } catch (error) {
+      showNotification('Failed to load room settings: ' + error.message, 'error');
+    }
+  }
+  
+  async function saveSettings() {
+    if (!roomCode || !currentUserId) return;
+    
+    try {
+      const settings = {
+        roomCode,
+        userId: currentUserId,
+        isLocked: document.getElementById('room-locked').checked,
+        inviteOnly: document.getElementById('room-invite-only').checked,
+        maxMembers: parseInt(document.getElementById('room-max-members').value)
+      };
+      
+      const response = await fetch(`${API_BASE}/room-manage`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      
+      const data = await response.json();
+      
+      if (data.ok) {
+        showNotification('Room settings updated successfully!', 'success');
+        closeModal();
+      } else {
+        throw new Error(data.error || 'Failed to save settings');
+      }
+    } catch (error) {
+      showNotification('Failed to save settings: ' + error.message, 'error');
+    }
+  }
+  
+  // Event listeners
+  openBtn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+  if (saveBtn) saveBtn.addEventListener('click', saveSettings);
+  
+  // Copy invite code functionality
+  const copyBtn = document.getElementById('copy-invite-code');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      const inviteCodeInput = document.getElementById('invite-code-value');
+      if (inviteCodeInput && inviteCodeInput.value && inviteCodeInput.value !== '—') {
+        try {
+          await navigator.clipboard.writeText(inviteCodeInput.value);
+          showNotification('Invite code copied to clipboard!', 'success');
+        } catch (err) {
+          // Fallback for older browsers
+          inviteCodeInput.select();
+          document.execCommand('copy');
+          showNotification('Invite code copied to clipboard!', 'success');
+        }
+      }
+    });
+  }
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+});
+
+// Global utility function for formatting timestamps
+window.formatTimestamp = function(timestamp) {
+  try {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: '2-digit',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch {
+    return timestamp || '—';
+  }
+};
+
+// Global function for entry details (called from table)
+window.viewEntryDetails = function(timestamp) {
+  const entry = currentHistoryData.find(row => row.created_at === timestamp && row.player === displayName);
+  if (!entry) return;
+  
+  const type = entry.delta > 0 ? 'Deposit' : 'Withdrawal';
+  const amount = Math.abs(entry.delta);
+  const note = entry.label || 'No note';
+  const date = window.formatTimestamp(entry.created_at);
+  
+  showNotification(`${type} of $${amount} on ${date}. Note: "${note}"`, 'info', 8000);
+};
+
+// ===== Celebration System =====
+
+// Variables to track milestone state and prevent duplicate celebrations
+let lastCelebrationBalance = null;
+let lastWarningBalance = null;
+
+// Create floating number effect
+function createFloatingNumber(button, amount) {
+  const rect = button.getBoundingClientRect();
+  const floating = document.createElement('div');
+  floating.className = 'floating-number';
+  floating.textContent = amount > 0 ? `+$${amount}` : `-$${Math.abs(amount)}`;
+  floating.style.left = `${rect.left + rect.width / 2}px`;
+  floating.style.top = `${rect.top}px`;
+  
+  document.body.appendChild(floating);
+  
+  // Remove after animation
+  setTimeout(() => {
+    if (floating.parentNode) {
+      floating.parentNode.removeChild(floating);
+    }
+  }, 2000);
+}
+
+// Create ripple effect on button click
+function createRipple(button, event) {
+  const rect = button.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = event.clientX - rect.left - size / 2;
+  const y = event.clientY - rect.top - size / 2;
+  
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.width = ripple.style.height = `${size}px`;
+  ripple.style.left = `${x}px`;
+  ripple.style.top = `${y}px`;
+  
+  button.appendChild(ripple);
+  
+  // Remove after animation
+  setTimeout(() => {
+    if (ripple.parentNode) {
+      ripple.parentNode.removeChild(ripple);
+    }
+  }, 600);
+}
+
+// Show milestone celebration
+function showCelebration() {
+  const overlay = document.getElementById('celebration-overlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    
+    // Auto-close after 5 seconds if user doesn't interact
+    setTimeout(() => {
+      if (!overlay.classList.contains('hidden')) {
+        closeCelebration();
+      }
+    }, 5000);
+  }
+}
+
+// Show milestone warning
+function showWarning() {
+  const overlay = document.getElementById('milestone-warning');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+    
+    // Auto-close after 5 seconds if user doesn't interact
+    setTimeout(() => {
+      if (!overlay.classList.contains('hidden')) {
+        closeWarning();
+      }
+    }, 5000);
+  }
+}
+
+// Close celebration overlay
+function closeCelebration() {
+  const overlay = document.getElementById('celebration-overlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+// Close warning overlay  
+function closeWarning() {
+  const overlay = document.getElementById('milestone-warning');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+}
+
+// Make close functions global for onclick handlers
+window.closeCelebration = closeCelebration;
+window.closeWarning = closeWarning;
+
+// Enhanced button click handler
+function enhanceButtonClicks() {
+  const plusBtn = document.getElementById('plus');
+  const minusBtn = document.getElementById('minus');
+  
+  if (plusBtn) {
+    plusBtn.addEventListener('click', function(event) {
+      createRipple(this, event);
+      createFloatingNumber(this, 1);
+    });
+  }
+  
+  if (minusBtn) {
+    minusBtn.addEventListener('click', function(event) {
+      createRipple(this, event);
+      createFloatingNumber(this, -1);
+    });
+  }
+}
+
+// Initialize celebration system when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  enhanceButtonClicks();
+});

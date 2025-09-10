@@ -18,8 +18,17 @@
     <h1>Impulse Wallet</h1>
   </div>
 
-  <!-- Header actions: Weekly Focus + Instructions -->
+  <!-- Header actions: Room Settings + Weekly Focus + Instructions -->
   <div class="header-right">
+<button id="room-manage-open"
+        class="instructions-btn hidden"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="room-manage-modal"
+        aria-label="Manage room settings">
+  Room Settings
+</button>
+
 <button id="focus-open"
         class="instructions-btn hidden"
         type="button"
@@ -128,6 +137,10 @@
           <label>Display name</label>
           <input id="name" placeholder="Your name" />
         </div>
+        <div>
+          <label>Invite code <span class="optional">(if room is locked)</span></label>
+          <input id="invite-code" placeholder="8-character code" maxlength="8" />
+        </div>
         <div class="actions">
 <button id="create" class="primary" type="button">Create room</button>
 <button id="join"   class="secondary" type="button">Join</button>
@@ -147,8 +160,8 @@
 
         <div class="controls">
           <input id="impulse" placeholder="Optional impulse label" />
-          <button id="plus" class="good">Deposit +$1</button>
-          <button id="minus" class="bad">Withdrawal −$1</button>
+          <button id="plus" class="good celebration-btn">Deposit +$1</button>
+          <button id="minus" class="bad celebration-btn">Withdrawal −$1</button>
         </div>
 
         <div id="banner" class="hidden banner"></div>
@@ -159,19 +172,13 @@
           <tbody></tbody>
         </table>
 
-        <h2>My history</h2>
-        <div class="history-head">
-          <select id="months">
-            <option value="3">3 months</option>
-            <option value="6">6 months</option>
-            <option value="12" selected>12 months</option>
-          </select>
-          <button id="csv" class="secondary">Export CSV</button>
+        <!-- History now opens in a modal -->
+        <div class="history-section">
+          <h2>My history</h2>
+          <button id="history-open" class="secondary" type="button" aria-haspopup="dialog" aria-controls="history-modal">
+            View My History
+          </button>
         </div>
-        <table id="mine">
-          <thead><tr><th>When</th><th>Amount</th><th>Impulse</th><th>Note</th></tr></thead>
-          <tbody></tbody>
-        </table>
       </div>
     </section>
       <!-- Footer -->
@@ -359,6 +366,180 @@
 
 <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 <script src="app.js?v=2"></script>
+
+<!-- History Modal -->
+<div id="history-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="history-title" hidden>
+  <div class="modal-content modal-content-wide" role="document" tabindex="-1">
+    <button id="history-close" class="modal-close" type="button" aria-label="Close history">×</button>
+    <h2 id="history-title">My History</h2>
+    <div class="modal-body">
+      <div class="history-controls">
+        <div class="history-filters">
+          <label for="history-months">Show last:</label>
+          <select id="history-months">
+            <option value="1">1 month</option>
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="12" selected>12 months</option>
+            <option value="24">2 years</option>
+            <option value="all">All time</option>
+          </select>
+        </div>
+        <div class="history-actions">
+          <button id="history-csv" class="secondary" type="button">
+            📥 Export CSV
+          </button>
+          <button id="history-refresh" class="secondary" type="button">
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+      
+      <!-- Newsletter signup section -->
+      <div class="newsletter-section">
+        <div class="newsletter-content">
+          <div class="newsletter-text">
+            <h3>📈 Level up your focus game</h3>
+            <p>Get monthly productivity insights and focus strategies delivered to your inbox.</p>
+          </div>
+          <div class="newsletter-action">
+            <a href="https://themoderncompass.io/newsletter/" target="_blank" rel="noopener noreferrer" class="newsletter-btn">
+              Get Tips Monthly
+            </a>
+            <button id="newsletter-dismiss" class="newsletter-dismiss" aria-label="Dismiss newsletter signup">×</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="history-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="total-entries">—</div>
+          <div class="stat-label">Total Entries</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="current-balance">—</div>
+          <div class="stat-label">Current Balance</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="best-streak">—</div>
+          <div class="stat-label">Best Streak</div>
+        </div>
+      </div>
+      
+      <div class="history-table-container">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>Date & Time</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="history-tbody">
+            <!-- Populated by JavaScript -->
+          </tbody>
+        </table>
+        <div id="history-empty" class="empty-state" hidden>
+          <div class="empty-icon">📊</div>
+          <h3>No history yet</h3>
+          <p>Your entries will appear here once you start tracking.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Room Management Modal -->
+<div id="room-manage-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="room-manage-title" hidden>
+  <div class="modal-content" role="document" tabindex="-1">
+    <button id="room-manage-close" class="modal-close" type="button" aria-label="Close room settings">×</button>
+    <h2 id="room-manage-title">Room Settings</h2>
+    <div class="modal-body">
+      <div class="room-info">
+        <h3>Room: <span id="room-code-display">—</span></h3>
+        <p class="muted">As the room creator, you can manage these settings.</p>
+      </div>
+      
+      <div class="invite-code-section">
+        <h3>🔗 Invite Code</h3>
+        <div class="invite-code-display">
+          <input type="text" id="invite-code-value" readonly value="—" class="invite-code-input">
+          <button id="copy-invite-code" class="secondary" title="Copy invite code">📋 Copy</button>
+        </div>
+        <p class="muted">Share this code with others to let them join your room, even when locked.</p>
+      </div>
+      
+      <div class="room-settings">
+        <div class="setting-group">
+          <label class="setting-label">
+            <input type="checkbox" id="room-locked"> 
+            <span>🔒 Lock Room</span>
+          </label>
+          <p class="setting-desc">Prevent new members from joining</p>
+        </div>
+        
+        <div class="setting-group">
+          <label class="setting-label">
+            <input type="checkbox" id="room-invite-only"> 
+            <span>👥 Invite Only</span>
+          </label>
+          <p class="setting-desc">Only you can add new members</p>
+        </div>
+        
+        <div class="setting-group">
+          <label class="setting-label">
+            <span>👤 Member Limit</span>
+          </label>
+          <select id="room-max-members">
+            <option value="10">10 members</option>
+            <option value="25">25 members</option>
+            <option value="50" selected>50 members</option>
+            <option value="100">100 members</option>
+          </select>
+          <p class="setting-desc">Maximum number of room members</p>
+        </div>
+      </div>
+      
+      <div class="room-members">
+        <h3>Members (<span id="member-count">0</span>)</h3>
+        <div id="members-list" class="members-list">
+          <!-- Members populated by JavaScript -->
+        </div>
+      </div>
+      
+      <div class="room-actions">
+        <button id="save-room-settings" class="primary">Save Changes</button>
+        <button id="cancel-room-settings" class="secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Notification System -->
+<div id="notification-container" class="notification-container">
+  <!-- Notifications will be inserted here dynamically -->
+</div>
+
+<!-- Celebration System -->
+<div id="celebration-overlay" class="celebration-overlay hidden">
+  <div class="celebration-content">
+    <div class="celebration-icon">🎉</div>
+    <h2 class="celebration-title">Congratulations!</h2>
+    <p class="celebration-message">You've reached $20 this week!</p>
+    <button class="celebration-close" onclick="closeCelebration()">Continue</button>
+  </div>
+</div>
+
+<div id="milestone-warning" class="celebration-overlay warning hidden">
+  <div class="celebration-content">
+    <div class="celebration-icon">⚠️</div>
+    <h2 class="celebration-title">Heads Up!</h2>
+    <p class="celebration-message">You've hit -$20 this week. Time to refocus!</p>
+    <button class="celebration-close" onclick="closeWarning()">I Got This</button>
+  </div>
+</div>
 
 <!-- Contact modal script (runs after app.js, fully defensive) -->
 <script>
