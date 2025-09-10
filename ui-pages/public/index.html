@@ -188,6 +188,11 @@
       <button id="open-terms" class="link-like" type="button" aria-haspopup="dialog" aria-controls="terms-modal">
         Terms & Conditions
       </button>
+      <span class="sep" aria-hidden="true">|</span>
+      <!-- Contact button -->
+      <button id="contact-btn" class="link-like" type="button" aria-haspopup="dialog" aria-controls="contact-modal">
+        Contact
+      </button>
     </nav>
     <small>© 2025 Modern Compass. All rights reserved</small>
   </footer>
@@ -297,8 +302,172 @@
     </div>
   </div>
 
+  <!-- Contact modal -->
+  <div id="contact-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="contact-title" hidden>
+    <div class="modal-content" role="document" tabindex="-1">
+      <button id="contact-close" class="modal-close" type="button" aria-label="Close contact form">×</button>
+      <h2 id="contact-title">Get in Touch</h2>
+      <div class="modal-body">
+        <p class="muted">Found a bug? Have feedback? We would love to hear from you.</p>
+
+        <!-- Success State (hidden by default) -->
+        <div id="success-state" class="banner" style="text-align: center; padding: 2rem 1rem;" hidden>
+          <h3 style="margin-top: 0; color: #059669;">Message Sent!</h3>
+          <p class="muted">Thanks for reaching out. We will get back to you soon.</p>
+        </div>
+
+        <!-- Contact Form -->
+        <form id="contact-form">
+          <!-- Web3Forms access key -->
+          <input type="hidden" name="access_key" value="bd8675f4-e7c6-4213-8e7c-2d79cae0a3bf">
+
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-name" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Name</label>
+            <input type="text" id="contact-name" name="name" placeholder="Your name" required>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-email" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Email</label>
+            <input type="email" id="contact-email" name="email" placeholder="your@email.com" required>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-category" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Category</label>
+            <select id="contact-category" name="category" style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff;" required>
+              <option value="">Select a category</option>
+              <option value="app-issue">App Issue</option>
+              <option value="feature-request">Feature Request</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 1rem;">
+            <label for="contact-message" style="display: block; font-size: .9rem; color: #555; margin-bottom: .25rem;">Message</label>
+            <textarea id="contact-message" name="message" placeholder="What is on your mind?" required 
+              style="width: 100%; padding: .65rem .75rem; border: 1px solid #d9dbe1; border-radius: 10px; background: #fff; min-height: 120px; resize: vertical; font-family: inherit;"></textarea>
+          </div>
+          
+          <div class="actions">
+            <button type="button" id="cancel-btn" class="secondary">Cancel</button>
+            <button type="button" id="submit-btn" class="primary">Send Message</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   </main>
+
 <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
 <script src="app.js?v=2"></script>
+
+<!-- Contact modal script (runs after app.js, fully defensive) -->
+<script>
+(function() {
+  try {
+    const contactBtn = document.getElementById('contact-btn');
+    const contactModal = document.getElementById('contact-modal');
+    if (!contactBtn || !contactModal) return; // do nothing if markup not present
+
+    const closeBtn = document.getElementById('contact-close');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const contactForm = document.getElementById('contact-form');
+    const successState = document.getElementById('success-state');
+    const modalContent = contactModal.querySelector('.modal-content');
+
+    const nameInput = document.getElementById('contact-name');
+    const emailInput = document.getElementById('contact-email');
+    const categoryInput = document.getElementById('contact-category');
+    const messageInput = document.getElementById('contact-message');
+
+    let isSubmitting = false;
+
+    function updateSubmitButton() {
+      if (!submitBtn) return;
+      submitBtn.disabled = !!isSubmitting;
+      submitBtn.textContent = isSubmitting ? 'Sending...' : 'Send Message';
+    }
+
+    function resetForm() {
+      if (contactForm) contactForm.reset();
+      if (contactForm) contactForm.hidden = false;
+      if (successState) successState.hidden = true;
+      isSubmitting = false;
+      updateSubmitButton();
+    }
+
+    function openModal() {
+      contactModal.hidden = false;
+      if (modalContent) modalContent.focus();
+      if (nameInput) nameInput.focus();
+    }
+
+    function closeModal() {
+      contactModal.hidden = true;
+      resetForm();
+    }
+
+    contactBtn.addEventListener('click', openModal);
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    // Close on outside click
+    contactModal.addEventListener('click', function(e) {
+      if (e.target === contactModal) closeModal();
+    });
+
+    // Close on Escape only while open
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && !contactModal.hidden) closeModal();
+    });
+
+    // Submit handler → Web3Forms
+    if (submitBtn) submitBtn.addEventListener('click', async function () {
+      if (isSubmitting) return;
+
+      // Basic validation
+      if (!nameInput?.value || !emailInput?.value || !categoryInput?.value || !messageInput?.value) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      isSubmitting = true;
+      updateSubmitButton();
+
+      try {
+        const formData = new FormData(contactForm);
+
+        const resp = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await resp.json();
+
+        if (resp.ok && result.success) {
+          // Show success state
+          if (contactForm) contactForm.hidden = true;
+          if (successState) successState.hidden = false;
+
+          // Auto close after 3 seconds
+          setTimeout(() => { closeModal(); }, 3000);
+        } else {
+          console.error('Web3Forms error:', result);
+          alert('Sorry, there was an error sending your message. Please try again.');
+        }
+      } catch (err) {
+        console.error('Network error:', err);
+        alert('Sorry, there was an error sending your message. Please try again.');
+      }
+
+      isSubmitting = false;
+      updateSubmitButton();
+    });
+  } catch (e) {
+    console.error('Contact modal init error:', e);
+  }
+})();
+</script>
+
 </body>
 </html>
