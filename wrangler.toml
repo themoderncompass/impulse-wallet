@@ -1,0 +1,11 @@
+name = "impulse-wallet"
+compatibility_date = "2024-09-01"
+
+# For pages dev command
+pages_build_output_dir = "ui-pages/public"
+
+# Local development database (you'll need to replace with actual DB ID)
+[[d1_databases]]
+binding = "DB"
+database_name = "impulse-wallet-local"
+database_id = "local-db"

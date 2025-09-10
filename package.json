@@ -1,0 +1,26 @@
+{
+  "name": "impulse-wallet",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wrangler pages dev ui-pages/public --compatibility-date=2024-09-01",
+    "test": "node test/run-tests.js",
+    "deploy:staging": "wrangler pages deploy ui-pages/public --project-name=impulse-wallet-staging",
+    "deploy:prod": "wrangler pages deploy ui-pages/public --project-name=impulse-wallet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/themoderncompass/impulse-wallet.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/themoderncompass/impulse-wallet/issues"
+  },
+  "homepage": "https://github.com/themoderncompass/impulse-wallet#readme",
+  "devDependencies": {
+    "wrangler": "^4.35.0"
+  }
+}
