@@ -464,64 +464,55 @@ const when = row.created_at
     el.mine.appendChild(tr);
   });
 
-  // Update balance display - find current user's balance from stats
-  const userId = currentUserId || getUserId();
+  // FIXED: Simple balance resolution like the working prototype
+  let userBalance = 0;
+  let userStats = null;
   
-  // Try to find current user's stats by displayName first, then by finding their name from history
-  let me = null;
-  let currentUserName = displayName;
+  console.log('Balance Debug:', { displayName, statsKeys: Array.from(stats.keys()), historyLength: history.length });
   
-  if (displayName) {
-    me = stats.get(displayName);
+  // Try to get current user's balance
+  if (displayName && stats.has(displayName)) {
+    userStats = stats.get(displayName);
+    userBalance = userStats.balance;
+  } else if (stats.size === 1) {
+    // Single user in room - get the only balance
+    userStats = Array.from(stats.values())[0];
+    userBalance = userStats.balance;
+  } else if (stats.size > 0) {
+    // Multiple users - try to find a match or use first entry
+    const allStats = Array.from(stats.entries());
+    userStats = allStats[0][1]; // Use first user's stats as fallback
+    userBalance = userStats.balance;
   }
   
-  // If no stats found and we have history, find user's name from their entries
-  if (!me && userId && history.length > 0) {
-    // Look for entries from current user ID in the full history to get their name
-    for (const entry of history) {
-      // Note: API doesn't return userId in history, so we need another approach
-      break;
-    }
-  }
-  
-  // If still no stats, check all players in stats to see if any match our expected pattern
-  if (!me && history.length > 0) {
-    // If there's only one player in the room, assume it's the current user
-    const playerNames = Array.from(stats.keys());
-    if (playerNames.length === 1) {
-      currentUserName = playerNames[0];
-      me = stats.get(currentUserName);
-    }
-  }
-  
-  // Ensure we always have stats for balance display (default to 0)
-  if (!me) {
-    me = { balance: 0, currentStreak: 0, longestStreak: 0 };
-  }
+  console.log('Resolved balance:', userBalance);
   
   // Update balance display
   const balanceEl = document.getElementById('current-balance');  
-  if (balanceEl) balanceEl.textContent = `$${me.balance}`;
+  if (balanceEl) {
+    balanceEl.textContent = `$${userBalance}`;
+    console.log('Updated balance display to:', `$${userBalance}`);
+  }
   
   // Update wallet image based on balance
-  updateWalletImage(me.balance);
+  updateWalletImage(userBalance);
   
   // Celebration for reaching +$20 (only trigger once per milestone achievement)
-  if (me.balance >= 20 && lastCelebrationBalance !== me.balance) {
+  if (userBalance >= 20 && lastCelebrationBalance !== userBalance) {
     show("You hit +$20 this week. Keep going.");
     showCelebration();
-    lastCelebrationBalance = me.balance;
+    lastCelebrationBalance = userBalance;
   }
   
   // Warning for hitting -$20 (only trigger once per milestone)
-  if (me.balance <= -20 && lastWarningBalance !== me.balance) {
+  if (userBalance <= -20 && lastWarningBalance !== userBalance) {
     show("You hit −$20 this week. Keep tracking.", true);
     showWarning();
-    lastWarningBalance = me.balance;
+    lastWarningBalance = userBalance;
   }
   
   // Reset milestone tracking if balance changes significantly
-  if (me.balance > -20 && me.balance < 20) {
+  if (userBalance > -20 && userBalance < 20) {
     lastCelebrationBalance = null;
     lastWarningBalance = null;
   }
@@ -532,7 +523,9 @@ const when = row.created_at
 async function refresh() {
   if (!roomCode) return;
   try {
+    console.log('Refreshing state for room:', roomCode, 'displayName:', displayName);
     const data = await api(`/state?roomCode=${encodeURIComponent(roomCode)}`);
+    console.log('State API response:', data);
     paint(data);
     
     // Check if user is room creator to show/hide room management button
@@ -1641,34 +1634,168 @@ function createRipple(button, event) {
   }, 600);
 }
 
-// Show milestone celebration
+// Show milestone celebration with falling dollars and confetti from prototype
 function showCelebration() {
-  const overlay = document.getElementById('celebration-overlay');
-  if (overlay) {
-    overlay.classList.remove('hidden');
-    
-    // Auto-close after 5 seconds if user doesn't interact
+  console.log('🎉 TRIGGERING CELEBRATION ANIMATION!');
+  
+  // Create celebration container
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100vw';
+  container.style.height = '100vh';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '9999';
+  container.style.overflow = 'hidden';
+  document.body.appendChild(container);
+  
+  // Success text
+  const successText = document.createElement('div');
+  successText.textContent = 'Goal Achieved! 🎉';
+  successText.style.position = 'fixed';
+  successText.style.top = '40%';
+  successText.style.left = '50%';
+  successText.style.transform = 'translate(-50%, -50%)';
+  successText.style.fontSize = '3rem';
+  successText.style.fontWeight = 'bold';
+  successText.style.color = '#68d391';
+  successText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+  successText.style.zIndex = '10000';
+  successText.style.pointerEvents = 'none';
+  successText.style.animation = 'successTextPop 2.5s ease-out';
+  container.appendChild(successText);
+  
+  // Create falling dollars (15 dollar bills)
+  for (let i = 0; i < 15; i++) {
     setTimeout(() => {
-      if (!overlay.classList.contains('hidden')) {
-        closeCelebration();
-      }
-    }, 5000);
+      const dollar = document.createElement('div');
+      dollar.className = 'falling-dollar';
+      dollar.style.position = 'absolute';
+      dollar.style.width = '40px';
+      dollar.style.height = '65px';
+      dollar.style.backgroundImage = 'url("wallet-assets/Dollar.png")';
+      dollar.style.backgroundSize = 'contain';
+      dollar.style.backgroundRepeat = 'no-repeat';
+      dollar.style.backgroundPosition = 'center';
+      dollar.style.left = Math.random() * 100 + 'vw';
+      dollar.style.top = '-100px';
+      dollar.style.animationDelay = Math.random() * 0.5 + 's';
+      dollar.style.animation = `dollarFall ${2 + Math.random()}s linear forwards`;
+      dollar.style.pointerEvents = 'none';
+      container.appendChild(dollar);
+    }, i * 100);
   }
+  
+  // Create confetti (30 pieces)
+  const colors = ['#ff6b35', '#f7931e', '#ffcc02', '#68d391', '#4ecdc4', '#a78bfa'];
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.position = 'absolute';
+      confetti.style.width = '8px';
+      confetti.style.height = '8px';
+      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.top = '-10px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.3 + 's';
+      confetti.style.animation = `confettiFall ${1.5 + Math.random() * 0.5}s linear forwards`;
+      confetti.style.pointerEvents = 'none';
+      container.appendChild(confetti);
+    }, i * 50);
+  }
+  
+  // Clean up after animation
+  setTimeout(() => {
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+  }, 4000);
 }
 
-// Show milestone warning
+// Show milestone warning with recharge animation from prototype
 function showWarning() {
-  const overlay = document.getElementById('milestone-warning');
-  if (overlay) {
-    overlay.classList.remove('hidden');
-    
-    // Auto-close after 5 seconds if user doesn't interact
-    setTimeout(() => {
-      if (!overlay.classList.contains('hidden')) {
-        closeWarning();
-      }
-    }, 5000);
+  console.log('⚡ TRIGGERING RECHARGE ANIMATION!');
+  
+  // Create animation container
+  const container = document.createElement('div');
+  container.className = 'animation-container';
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100vw';
+  container.style.height = '100vh';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+  
+  // Create recharge overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'recharge-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.background = 'linear-gradient(135deg, rgba(255,107,53,0.8), rgba(255,154,86,0.6))';
+  overlay.style.pointerEvents = 'none';
+  overlay.style.zIndex = '1000';
+  overlay.style.animation = 'rechargeOverlay 3s ease-out';
+  container.appendChild(overlay);
+  
+  // Create rising arrow icon
+  const risingArrow = document.createElement('div');
+  risingArrow.className = 'rising-arrow-icon';
+  risingArrow.style.position = 'fixed';
+  risingArrow.style.top = '40%';
+  risingArrow.style.left = '50%';
+  risingArrow.style.transform = 'translate(-50%, -50%)';
+  risingArrow.style.width = '60px';
+  risingArrow.style.height = '80px';
+  risingArrow.style.pointerEvents = 'none';
+  risingArrow.style.zIndex = '1002';
+  risingArrow.innerHTML = `
+    <div class="arrow-shaft" style="width: 6px; height: 50px; background: linear-gradient(180deg, #48bb78, #38a169); margin: 0 auto; border-radius: 3px;"></div>
+    <div class="arrow-head" style="width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 20px solid #48bb78; margin: -2px auto 0; position: relative; z-index: 1;"></div>
+    <div class="arrow-trail" style="width: 20px; height: 20px; background: linear-gradient(180deg, rgba(72,187,120,0.6), rgba(72,187,120,0)); border-radius: 2px; margin: 5px auto;"></div>
+  `;
+  risingArrow.style.animation = 'arrowRise 3s ease-out';
+  container.appendChild(risingArrow);
+  
+  // Create motivational text
+  const motivationalText = document.createElement('div');
+  motivationalText.className = 'motivational-text';
+  motivationalText.innerHTML = 'Keep Moving Forward!<br><small>Progress isn\\'t about perfection. It\\'s about persistence</small>';
+  motivationalText.style.position = 'fixed';
+  motivationalText.style.top = '60%';
+  motivationalText.style.left = '50%';
+  motivationalText.style.transform = 'translate(-50%, -50%)';
+  motivationalText.style.fontSize = '2rem';
+  motivationalText.style.fontWeight = 'bold';
+  motivationalText.style.color = '#68d391';
+  motivationalText.style.textAlign = 'center';
+  motivationalText.style.pointerEvents = 'none';
+  motivationalText.style.zIndex = '1001';
+  motivationalText.style.textShadow = '1px 1px 2px rgba(0,0,0,0.2)';
+  motivationalText.style.animation = 'motivationalTextGlow 3s ease-out';
+  container.appendChild(motivationalText);
+  
+  // Add wallet recharge effect
+  const walletImage = document.getElementById('wallet-display');
+  if (walletImage) {
+    walletImage.style.animation = 'walletRecharge 1s ease-out';
   }
+  
+  // Clean up after animation
+  setTimeout(() => {
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+    if (walletImage) {
+      walletImage.style.animation = '';
+    }
+  }, 3500);
 }
 
 // Close celebration overlay
@@ -1716,11 +1843,25 @@ document.addEventListener('DOMContentLoaded', function() {
   enhanceButtonClicks();
 });
 
+// Test keyboard shortcuts from prototype (for testing animations)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 's' || e.key === 'S') {
+    console.log('🧪 Testing success animation (S key pressed)');
+    showCelebration();
+  } else if (e.key === 'r' || e.key === 'R') {
+    console.log('🧪 Testing recharge animation (R key pressed)');
+    showWarning();
+  }
+});
+
 // ===== WALLET IMAGE SYSTEM =====
 
 function updateWalletImage(balance) {
   const walletImage = document.getElementById('wallet-display');
-  if (!walletImage) return;
+  if (!walletImage) {
+    console.log('Wallet image element not found');
+    return;
+  }
   
   let imageName = 'Wallet empty.png';
   
@@ -1731,11 +1872,20 @@ function updateWalletImage(balance) {
   else if (balance >= 1) imageName = 'Wallet 1 bill.png';
   else imageName = 'Wallet empty.png';
   
+  console.log('Updating wallet image:', imageName, 'for balance:', balance);
+  
   // Add animation class
   walletImage.classList.add('updating');
   
-  // Update image
+  // Update image - fixed path
   walletImage.style.backgroundImage = `url('wallet-assets/${imageName}')`;
+  
+  // Ensure element has proper size and background settings
+  walletImage.style.width = '300px';
+  walletImage.style.height = '200px';
+  walletImage.style.backgroundSize = 'contain';
+  walletImage.style.backgroundRepeat = 'no-repeat';
+  walletImage.style.backgroundPosition = 'center';
   
   // Remove animation class after animation completes
   setTimeout(() => {
@@ -1772,3 +1922,283 @@ function updateFocusDisplay(focusAreas) {
     }
   }
 }
+
+// Settings menu functionality
+function toggleSettings() {
+  console.log('🍔 toggleSettings called!');
+  const toggle = document.querySelector('.settings-toggle');
+  const dropdown = document.getElementById('settingsDropdown');
+  
+  console.log('🔍 Elements found:', { toggle: !!toggle, dropdown: !!dropdown });
+  
+  if (toggle && dropdown) {
+    toggle.classList.toggle('active');
+    dropdown.classList.toggle('active');
+    console.log('✅ Classes toggled - active:', toggle.classList.contains('active'));
+  } else {
+    console.error('❌ Missing elements:', { toggle, dropdown });
+  }
+}
+
+// Make toggleSettings globally available for onclick handlers
+window.toggleSettings = toggleSettings;
+
+// Add backup event listener for settings menu
+document.addEventListener('DOMContentLoaded', function() {
+  const settingsToggle = document.querySelector('.settings-toggle');
+  if (settingsToggle) {
+    console.log('🎯 Adding backup click listener to settings toggle');
+    settingsToggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('🖱️ Settings toggle clicked via event listener');
+      toggleSettings();
+    });
+  } else {
+    console.warn('⚠️ Settings toggle not found in DOM');
+  }
+});
+
+
+// ===== ONBOARDING SYSTEM =====
+
+let currentOnboardingStep = 0;
+let onboardingCompleted = false;
+
+// Onboarding steps from prototype
+const onboardingSteps = [
+  {
+    title: "Welcome to Impulse Wallet!",
+    text: "Your personal accountability partner! Track your actions and stay committed to the goals that matter to you.",
+    button: "Let's Start!",
+    highlight: null,
+    tooltip: null
+  },
+  {
+    title: "Your Progress Tracker",
+    text: "This wallet represents your commitment! Each dollar shows you followed through on your promises to yourself. Consistency builds character!",
+    button: "Got it!",
+    highlight: "#wallet-display",
+    tooltip: { element: "#wallet-display", text: "Your wallet grows with follow-through!" }
+  },
+  {
+    title: "Stay Accountable",
+    text: "Your balance reflects your follow-through. Each +$1 means you kept a commitment. Your $20 weekly goal keeps you moving forward!",
+    button: "Makes sense!",
+    highlight: "#current-balance",
+    tooltip: { element: "#current-balance", text: "Your accountability tracker" }
+  },
+  {
+    title: "Log Your Actions",
+    text: "Be honest with yourself! +$1 when you follow through, -$1 when you fall short. Accountability means owning both wins and setbacks!",
+    button: "Let me try!",
+    highlight: ".balance-actions",
+    tooltip: { element: ".action-button", text: "Click to log your commitments!" }
+  },
+  {
+    title: "Your Commitments",
+    text: "These are your weekly promises to yourself. Three focus areas keep you from spreading too thin. Choose what matters most!",
+    button: "I understand!",
+    highlight: ".focus-areas",
+    tooltip: { element: ".focus-chip", text: "Your weekly commitments" }
+  },
+  {
+    title: "Compete & Connect",
+    text: "See how you're doing compared to others in your room! The progress bars show everyone's journey toward the weekly $20 goal.",
+    button: "Exciting!",
+    highlight: ".leaderboard",
+    tooltip: { element: ".leaderboard", text: "Friendly competition motivates growth!" }
+  },
+  {
+    title: "Ready to Build Habits!",
+    text: "You're all set! Start by making a deposit for a positive action you've completed. Watch your wallet grow and celebrate your progress!",
+    button: "Start Building!",
+    highlight: "#plus",
+    tooltip: null
+  }
+];
+
+// Initialize onboarding
+function initOnboarding() {
+  // Check if user has completed onboarding
+  const completed = localStorage.getItem("onboardingCompleted");
+  if (completed === "true") {
+    onboardingCompleted = true;
+    return;
+  }
+  
+  console.log("🎓 Starting onboarding...");
+  onboardingCompleted = false;
+  currentOnboardingStep = 0;
+  
+  // Start onboarding after brief delay
+  setTimeout(() => {
+    hideNonEssentialElements();
+    showOnboardingOverlay();
+  }, 1000);
+}
+
+function showOnboardingOverlay() {
+  console.log("📖 Showing onboarding step:", currentOnboardingStep);
+  const overlay = document.getElementById("onboardingOverlay");
+  const step = onboardingSteps[currentOnboardingStep];
+  
+  if (!overlay || !step) {
+    console.error("❌ Onboarding overlay or step not found");
+    return;
+  }
+  
+  // Update content
+  document.getElementById("onboardingTitle").textContent = step.title;
+  document.getElementById("onboardingText").textContent = step.text;
+  document.getElementById("onboardingButton").textContent = step.button;
+  
+  // Show overlay
+  overlay.classList.add("active");
+  
+  // Add highlights and tooltips after animation
+  if (step.highlight) {
+    setTimeout(() => {
+      highlightElement(step.highlight);
+      if (step.tooltip) {
+        showTooltip(step.tooltip.element, step.tooltip.text);
+      }
+    }, 300);
+  }
+}
+
+function nextOnboardingStep() {
+  console.log("▶️ Next onboarding step");
+  clearHighlights();
+  hideTooltip();
+  
+  if (currentOnboardingStep < onboardingSteps.length - 1) {
+    currentOnboardingStep++;
+    
+    // Progressive disclosure
+    if (currentOnboardingStep === 4) {
+      // Show focus areas
+      document.querySelectorAll(".focus-chip, .focus-selection-prompt").forEach(element => {
+        element.classList.remove("onboarding-hidden");
+      });
+    }
+    
+    if (currentOnboardingStep === 5) {
+      // Show leaderboard
+      const leaderboard = document.querySelector(".leaderboard");
+      if (leaderboard) leaderboard.classList.remove("onboarding-hidden");
+      const historyBtn = document.querySelector(".history-button");
+      if (historyBtn) historyBtn.classList.remove("onboarding-hidden");
+    }
+    
+    setTimeout(() => showOnboardingOverlay(), 100);
+  } else {
+    completeOnboarding();
+  }
+}
+
+function skipOnboarding() {
+  if (confirm("Skip the tutorial? You can always access help from the settings menu.")) {
+    completeOnboarding();
+  }
+}
+
+function completeOnboarding() {
+  console.log("✅ Completing onboarding");
+  const overlay = document.getElementById("onboardingOverlay");
+  overlay.classList.remove("active");
+  clearHighlights();
+  hideTooltip();
+  showAllElements();
+  
+  // Mark as completed
+  localStorage.setItem("onboardingCompleted", "true");
+  onboardingCompleted = true;
+  
+  // Show success message
+  setTimeout(() => {
+    showTooltip("#wallet-display", "Great! Start tracking your commitments now!");
+    setTimeout(hideTooltip, 3000);
+  }, 500);
+}
+
+function hideNonEssentialElements() {
+  // Hide elements that aren't immediately needed during onboarding
+  const elementsToHide = [
+    ".leaderboard",
+    ".history-button",
+    ".focus-chips",
+    ".focus-selection-prompt"
+  ];
+  
+  elementsToHide.forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.classList.add("onboarding-hidden");
+    }
+  });
+}
+
+function showAllElements() {
+  document.querySelectorAll(".onboarding-hidden").forEach(element => {
+    element.classList.remove("onboarding-hidden");
+  });
+}
+
+function highlightElement(selector) {
+  const element = document.querySelector(selector);
+  if (element) {
+    element.classList.add("onboarding-highlight");
+  } else {
+    console.warn("⚠️ Highlight element not found:", selector);
+  }
+}
+
+function clearHighlights() {
+  document.querySelectorAll(".onboarding-highlight").forEach(element => {
+    element.classList.remove("onboarding-highlight");
+  });
+}
+
+function showTooltip(elementSelector, text) {
+  const tooltip = document.getElementById("tooltip");
+  const targetElement = document.querySelector(elementSelector);
+  
+  if (!targetElement || !tooltip) {
+    console.warn("⚠️ Tooltip target or tooltip element not found:", elementSelector);
+    return;
+  }
+  
+  const rect = targetElement.getBoundingClientRect();
+  tooltip.textContent = text;
+  tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + "px";
+  tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + "px";
+  tooltip.classList.add("active");
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById("tooltip");
+  if (tooltip) {
+    tooltip.classList.remove("active");
+  }
+}
+
+// Make onboarding functions globally available for onclick handlers
+window.nextOnboardingStep = nextOnboardingStep;
+window.skipOnboarding = skipOnboarding;
+
+// Initialize onboarding when DOM is ready
+document.addEventListener("DOMContentLoaded", function() {
+  // Initialize onboarding system
+  initOnboarding();
+});
+
+
+// Add O key to reset onboarding for testing
+document.addEventListener("keydown", function(e) {
+  if (e.key === "o" || e.key === "O") {
+    console.log("🧪 Resetting onboarding for testing (O key pressed)");
+    localStorage.removeItem("onboardingCompleted");
+    location.reload();
+  }
+});
+

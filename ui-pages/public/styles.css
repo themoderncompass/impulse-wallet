@@ -95,20 +95,25 @@ body {
   padding: 0 1rem;
 }
 
-/* Header: logo + title left, Instructions button right */
+/* Header: title centered, settings menu top right */
 .header {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  gap: .75rem;
-  flex-wrap: wrap;           /* mobile-safe */
   margin-bottom: 1rem;
+  padding: 1rem 0;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
+.header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
 }
 
 /* App logo — responsive: small on phones, scales up on desktop */
@@ -844,10 +849,115 @@ th, td {
 /* ---------- Weekly Focus UI ---------- */
 
 /* Right-side header action group (Weekly Focus + Instructions) */
-.header-right {
+/* Settings Menu */
+.settings-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.settings-toggle {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
   display: flex;
-  gap: .5rem;
   align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.settings-toggle:hover {
+  border-color: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hamburger-line {
+  width: 16px;
+  height: 2px;
+  background: #4a5568;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.settings-toggle.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.settings-toggle.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.settings-toggle.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(6px, -6px);
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  min-width: 180px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.95);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.settings-dropdown.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.settings-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  color: #4a5568;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.settings-item:first-child {
+  border-radius: 10px 10px 0 0;
+}
+
+.settings-item:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  color: #2d3748;
+  transform: translateX(2px);
+}
+
+.settings-item::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-right: 10px;
 }
 
 /* V2 Focus badges (replacing v1 bubbles) */
@@ -1468,6 +1578,143 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
   box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
 }
 
+/* +$20 Success Celebration Animations */
+@keyframes dollarFall {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes successTextPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  85% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+.falling-dollar {
+  position: absolute;
+  width: 40px;
+  height: 65px;
+  background-image: url('wallet-assets/Dollar.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* -$20 Recharge Animation */
+@keyframes rechargeOverlay {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes arrowRise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(30px) scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0px) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(-10px) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px) scale(0.9);
+  }
+}
+
+@keyframes motivationalTextGlow {
+  0% { 
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  30% { 
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  85% { 
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes walletRecharge {
+  0% { 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  25% { 
+    transform: scale(0.95);
+    filter: brightness(0.8);
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: brightness(1.2);
+  }
+  75% { 
+    transform: scale(0.98);
+    filter: brightness(0.9);
+  }
+  100% { 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .main-content {
@@ -1511,3 +1758,165 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
     font-size: 16px;
   }
 }
+
+
+/* Onboarding Styles */
+.onboarding-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.3);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 100px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.onboarding-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.onboarding-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px 25px;
+  max-width: 350px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.onboarding-overlay.active .onboarding-card {
+  transform: scale(1);
+}
+
+.onboarding-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3748;
+  margin-bottom: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.onboarding-text {
+  color: #4a5568;
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.onboarding-button {
+  background: linear-gradient(145deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  margin: 5px;
+}
+
+.onboarding-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.onboarding-skip {
+  background: none;
+  color: #718096;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: color 0.2s ease;
+}
+
+.onboarding-skip:hover {
+  color: #4a5568;
+}
+
+/* Tooltip System */
+.tooltip {
+  position: absolute;
+  background: #2d3748;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1001;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.tooltip.active {
+  opacity: 1;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: #2d3748;
+}
+
+/* Onboarding highlight effects */
+.onboarding-highlight {
+  position: relative;
+  z-index: 999;
+}
+
+.onboarding-highlight::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border: 3px solid #667eea;
+  border-radius: 12px;
+  z-index: -1;
+  animation: onboardingPulse 2s infinite;
+}
+
+@keyframes onboardingPulse {
+  0% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.02); }
+  100% { opacity: 0.8; transform: scale(1); }
+}
+
+/* Progressive disclosure - hidden during onboarding */
+.onboarding-hidden {
+  opacity: 0.3;
+  pointer-events: none;
+  filter: blur(1px);
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 480px) {
+  .onboarding-card {
+    padding: 20px;
+    margin: 10px;
+  }
+}
+

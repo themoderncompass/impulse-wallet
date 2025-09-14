@@ -13,41 +13,72 @@
   <main class="container">
 
 <header class="header">
-  <div class="header-left">
-    <img src="/icons/icon-512.png" alt="Impulse Wallet" class="app-logo">
-    <h1>Impulse Wallet</h1>
-  </div>
-
-  <!-- Header actions: Room Settings + Weekly Focus + Instructions -->
-  <div class="header-right">
-<button id="room-manage-open"
-        class="instructions-btn hidden"
-        type="button"
-        aria-haspopup="dialog"
-        aria-controls="room-manage-modal"
-        aria-label="Manage room settings">
-  Room Settings
-</button>
-
-<button id="focus-open"
-        class="instructions-btn hidden"
-        type="button"
-        aria-haspopup="dialog"
-        aria-controls="focus-modal"
-        aria-label="Open weekly focus">
-  Weekly Focus
-</button>
-
-    <button id="instructions-open"
-            class="instructions-btn"
-            type="button"
-            aria-haspopup="dialog"
-            aria-controls="instructions-modal"
-            aria-label="Open instructions">
-      Instructions
+  <h1>Impulse Wallet</h1>
+  
+  <!-- Settings Menu -->
+  <div class="settings-menu">
+    <button class="settings-toggle" onclick="toggleSettings()">
+      <div class="hamburger">
+        <div class="hamburger-line"></div>
+        <div class="hamburger-line"></div>
+        <div class="hamburger-line"></div>
+      </div>
     </button>
+    <div class="settings-dropdown" id="settingsDropdown">
+      <div class="settings-item" onclick="document.getElementById('instructions-open').click();">Instructions</div>
+      <div class="settings-item" onclick="document.getElementById('focus-open').click();">Weekly Focus</div>
+      <div class="settings-item" onclick="document.getElementById('room-manage-open').click();">Room Settings</div>
+    </div>
   </div>
+  
+  <!-- Hidden original buttons for modal functionality -->
+  <button id="room-manage-open"
+          class="instructions-btn hidden"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="room-manage-modal"
+          aria-label="Manage room settings"
+          style="display: none;">
+    Room Settings
+  </button>
+
+  <button id="focus-open"
+          class="instructions-btn hidden"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="focus-modal"
+          aria-label="Open weekly focus"
+          style="display: none;">
+    Weekly Focus
+  </button>
+
+  <button id="instructions-open"
+          class="instructions-btn"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="instructions-modal"
+          aria-label="Open instructions"
+          style="display: none;">
+    Instructions
+  </button>
 </header>
+
+<!-- Onboarding Overlay -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <div class="onboarding-card">
+    <h2 class="onboarding-title" id="onboardingTitle">Welcome to Impulse Wallet!</h2>
+    <p class="onboarding-text" id="onboardingText">
+      Your personal accountability partner! Track your actions and stay committed to the goals that matter to you.
+    </p>
+    <button class="onboarding-button" id="onboardingButton" onclick="nextOnboardingStep()">
+      Let's Start!
+    </button>
+    <button class="onboarding-skip" onclick="skipOnboarding()">Skip Tutorial</button>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
 
 <!-- Instructions modal -->
 <div id="instructions-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title" hidden>
