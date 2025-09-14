@@ -22,5 +22,8 @@
   "homepage": "https://github.com/themoderncompass/impulse-wallet#readme",
   "devDependencies": {
     "wrangler": "^4.35.0"
+  },
+  "dependencies": {
+    "puppeteer": "^24.20.0"
   }
 }

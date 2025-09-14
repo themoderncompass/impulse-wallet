@@ -1766,7 +1766,7 @@ function showWarning() {
   // Create motivational text
   const motivationalText = document.createElement('div');
   motivationalText.className = 'motivational-text';
-  motivationalText.innerHTML = 'Keep Moving Forward!<br><small>Progress isn\\'t about perfection. It\\'s about persistence</small>';
+  motivationalText.innerHTML = 'Keep Moving Forward!<br><small>Progress isn\'t about perfection. It\'s about persistence</small>';
   motivationalText.style.position = 'fixed';
   motivationalText.style.top = '60%';
   motivationalText.style.left = '50%';
