@@ -24,15 +24,89 @@ async function testUI() {
     // Wait a moment for any dynamic content
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Try to find create/join room elements
-    const createButton = await page.$('#create-room-btn');
-    const joinButton = await page.$('#join-room-btn');
+    // Test all main buttons and elements
+    const elements = {
+      // Main room buttons
+      create: await page.$('#create'),
+      join: await page.$('#join'),
 
-    console.log('Create button found:', !!createButton);
-    console.log('Join button found:', !!joinButton);
+      // Action buttons
+      plus: await page.$('#plus'),
+      minus: await page.$('#minus'),
+      undo: await page.$('#undo'),
 
-    // Take another screenshot after waiting
-    await page.screenshot({ path: 'screenshot-after-wait.png' });
+      // Settings menu
+      settingsToggle: await page.$('.settings-toggle'),
+      settingsDropdown: await page.$('#settingsDropdown'),
+
+      // Modal triggers
+      historyOpen: await page.$('#history-open'),
+      focusOpen: await page.$('#focus-open'),
+      instructionsOpen: await page.$('#instructions-open'),
+      roomManageOpen: await page.$('#room-manage-open'),
+
+      // Modals
+      historyModal: await page.$('#history-modal'),
+      focusModal: await page.$('#focus-modal'),
+      instructionsModal: await page.$('#instructions-modal'),
+      roomManageModal: await page.$('#room-manage-modal'),
+
+      // Balance and wallet
+      currentBalance: await page.$('#current-balance'),
+      walletDisplay: await page.$('#wallet-display'),
+
+      // Input fields
+      roomInput: await page.$('#room'),
+      nameInput: await page.$('#name'),
+      impulseInput: await page.$('#impulse'),
+      noteInput: await page.$('#note-input')
+    };
+
+    console.log('=== ELEMENT TEST RESULTS ===');
+    for (const [name, element] of Object.entries(elements)) {
+      console.log(`${name}: ${element ? '✅ Found' : '❌ Missing'}`);
+    }
+
+    // Test hamburger menu interaction
+    console.log('=== TESTING HAMBURGER MENU ===');
+    if (elements.settingsToggle) {
+      try {
+        await elements.settingsToggle.click();
+        await page.waitForTimeout(500);
+
+        const dropdownVisible = await page.evaluate(() => {
+          const dropdown = document.getElementById('settingsDropdown');
+          return dropdown && dropdown.classList.contains('active');
+        });
+
+        console.log('Hamburger menu toggle result:', dropdownVisible ? '✅ Working' : '❌ Not working');
+        await page.screenshot({ path: 'screenshot-hamburger-test.png' });
+      } catch (error) {
+        console.log('Hamburger menu test failed:', error.message);
+      }
+    }
+
+    // Test modal opens (if elements exist)
+    console.log('=== TESTING MODAL FUNCTIONALITY ===');
+    if (elements.instructionsOpen) {
+      try {
+        await elements.instructionsOpen.click();
+        await page.waitForTimeout(500);
+
+        const modalVisible = await page.evaluate(() => {
+          const modal = document.getElementById('instructions-modal');
+          return modal && !modal.hasAttribute('hidden');
+        });
+
+        console.log('Instructions modal test:', modalVisible ? '✅ Opens' : '❌ Does not open');
+        await page.screenshot({ path: 'screenshot-instructions-modal.png' });
+      } catch (error) {
+        console.log('Instructions modal test failed:', error.message);
+      }
+    }
+
+    // Take final screenshot
+    await page.screenshot({ path: 'screenshot-final.png' });
 
   } catch (error) {
     console.error('Test failed:', error);

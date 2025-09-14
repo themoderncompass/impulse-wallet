@@ -17,7 +17,7 @@
   
   <!-- Settings Menu -->
   <div class="settings-menu">
-    <button class="settings-toggle" onclick="toggleSettings()">
+    <button class="settings-toggle">
       <div class="hamburger">
         <div class="hamburger-line"></div>
         <div class="hamburger-line"></div>
@@ -232,7 +232,9 @@
             
             <!-- Custom Note Field -->
             <div class="note-section">
-              <input type="text" id="note-input" class="note-input" placeholder="Add note (optional)" maxlength="100">
+              <div id="note-field">
+                <input type="text" id="note-input" class="note-input" placeholder="Add note (optional)" maxlength="100">
+              </div>
             </div>
           </div>
         </div>

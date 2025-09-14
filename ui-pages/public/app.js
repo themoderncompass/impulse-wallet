@@ -222,9 +222,9 @@ const el = {
   banner: $("#banner"),
   board: $("#board tbody"),
   undo: $("#undo"),
-  months: $("#months"),
-  mine: $("#mine tbody"),
-  csv: $("#csv"),
+  months: $("#history-months"),
+  mine: $("#history-tbody"),
+  csv: $("#history-csv"),
   leaveBtn: document.getElementById("leave-room"),
   historyOpen: $("#history-open"),
   historyModal: $("#history-modal"),
@@ -234,10 +234,8 @@ const el = {
   historyCsv: $("#history-csv"),
   historyRefresh: $("#history-refresh"),
   // Note field elements
-  noteToggle: $("#note-toggle"),
   noteField: $("#note-field"),
   noteInput: $("#note-input"),
-  noteClear: $("#note-clear"),
   noteCharCount: $(".note-char-count")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
@@ -653,10 +651,7 @@ async function submit(amount) {
     if (el.noteInput) {
       el.noteInput.value = "";
       updateCharCount();
-      // Auto-collapse note field after submission
-      if (el.noteField && !el.noteField.classList.contains('hidden')) {
-        toggleNoteField();
-      }
+      // Clear note field after submission - note field is always visible
     }
     await refresh();
   } catch (e) {
@@ -783,8 +778,7 @@ function clearNoteField() {
 }
 
 // Note field event listeners
-el.noteToggle?.addEventListener('click', toggleNoteField);
-el.noteClear?.addEventListener('click', clearNoteField);
+// Note toggle and clear buttons removed
 el.noteInput?.addEventListener('input', updateCharCount);
 
 // Handle keyboard shortcuts
@@ -1844,15 +1838,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Test keyboard shortcuts from prototype (for testing animations)
-document.addEventListener('keydown', function(e) {
-  if (e.key === 's' || e.key === 'S') {
-    console.log('🧪 Testing success animation (S key pressed)');
-    showCelebration();
-  } else if (e.key === 'r' || e.key === 'R') {
-    console.log('🧪 Testing recharge animation (R key pressed)');
-    showWarning();
-  }
-});
 
 // ===== WALLET IMAGE SYSTEM =====
 
@@ -2200,11 +2185,4 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // Add O key to reset onboarding for testing
-document.addEventListener("keydown", function(e) {
-  if (e.key === "o" || e.key === "O") {
-    console.log("🧪 Resetting onboarding for testing (O key pressed)");
-    localStorage.removeItem("onboardingCompleted");
-    location.reload();
-  }
-});
 
