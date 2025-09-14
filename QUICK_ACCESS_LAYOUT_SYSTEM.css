@@ -1,0 +1,409 @@
+/* ==========================================
+   IMPULSE WALLET - QUICK ACCESS LAYOUT SYSTEM
+   ========================================== */
+
+/* Main Quick Access Panel */
+.quick-access-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.quick-access-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.quick-access-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.quick-access-expand {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.quick-access-expand:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+/* Horizontal Scrollable Container */
+.quick-actions-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0 16px;
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.quick-actions-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.quick-actions-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+}
+
+.quick-actions-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.quick-actions-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Individual Quick Action Button */
+.quick-action {
+  min-width: 110px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.quick-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.quick-action:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: 0.1s;
+}
+
+.quick-action:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Action Icons */
+.quick-action-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.quick-action-text {
+  font-weight: 500;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Specific Action Styling */
+.quick-action.history {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.quick-action.history:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(29, 78, 216, 0.15) 100%);
+  color: #1d4ed8;
+}
+
+.quick-action.room-settings {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.quick-action.room-settings:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+  color: #7c3aed;
+}
+
+.quick-action.focus {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.quick-action.focus:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+  color: #059669;
+}
+
+.quick-action.instructions {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.quick-action.instructions:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.15) 100%);
+  color: #d97706;
+}
+
+.quick-action.undo {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.quick-action.undo:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+  color: #dc2626;
+}
+
+/* Notification Badge for Quick Actions */
+.quick-action-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Conditional Visibility for Timed Actions */
+.quick-action.conditional {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+}
+
+.quick-action.conditional.available {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.quick-action.conditional:not(.available)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    rgba(0, 0, 0, 0.1) 2px,
+    transparent 2px,
+    transparent 4px
+  );
+  border-radius: inherit;
+}
+
+/* Timer Display for Undo Button */
+.quick-action.undo .undo-timer {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: #dc2626;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Expanded State (Alternative Layout) */
+.quick-access-panel.expanded {
+  padding: 20px;
+}
+
+.quick-access-panel.expanded .quick-actions-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  overflow-x: visible;
+  padding: 0;
+  margin: 0;
+}
+
+.quick-access-panel.expanded .quick-action {
+  min-width: 140px;
+  height: 56px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.quick-access-panel.expanded .quick-action-icon {
+  font-size: 20px;
+}
+
+.quick-access-panel.expanded .quick-action-text {
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 480px) {
+  .quick-access-panel {
+    padding: 12px;
+    margin: 12px 0;
+  }
+  
+  .quick-action {
+    min-width: 100px;
+    height: 44px;
+    font-size: 0.8rem;
+    padding: 0 12px;
+    gap: 6px;
+  }
+  
+  .quick-action-icon {
+    font-size: 14px;
+  }
+  
+  .quick-actions-container {
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    margin: 0 -12px;
+  }
+  
+  .quick-access-title {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 768px) {
+  .quick-actions-container {
+    gap: 16px;
+  }
+  
+  .quick-action {
+    min-width: 120px;
+    height: 52px;
+    padding: 0 20px;
+  }
+  
+  .quick-action-icon {
+    font-size: 18px;
+  }
+}
+
+/* Desktop - Show All Actions Without Scrolling */
+@media (min-width: 1024px) {
+  .quick-actions-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
+  }
+  
+  .quick-action {
+    min-width: 130px;
+    flex: 0 0 auto;
+  }
+}
+
+/* Accessibility */
+.quick-action[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-action,
+  .quick-action-badge {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Focus Visible */
+.quick-action:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .quick-action {
+    border-width: 2px;
+    background: white;
+  }
+  
+  .quick-action:hover {
+    background: #f3f4f6;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .quick-access-panel {
+    background: rgba(17, 24, 39, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .quick-action {
+    background: rgba(31, 41, 55, 0.9);
+    color: #f9fafb;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .quick-action:hover {
+    background: rgba(31, 41, 55, 1);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  .quick-access-title {
+    color: #f9fafb;
+  }
+  
+  .quick-actions-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .quick-actions-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Print Styles */
+@media print {
+  .quick-access-panel {
+    display: none;
+  }
+}

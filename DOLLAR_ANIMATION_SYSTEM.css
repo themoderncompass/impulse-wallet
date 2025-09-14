@@ -1,0 +1,501 @@
+/* ==========================================
+   IMPULSE WALLET - DOLLAR BILL ANIMATION SYSTEM
+   ========================================== */
+
+/* Main Wallet Container with Animation Zones */
+.wallet-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60px 40px; /* Extra space for animation zones */
+  margin: 20px 0;
+  min-height: 300px;
+  overflow: visible;
+}
+
+/* Wallet Visual Base */
+.wallet-visual {
+  position: relative;
+  width: 120px;
+  height: 90px;
+  background-image: url('Wallet.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10;
+}
+
+.wallet-visual.receiving {
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 20px rgba(16, 185, 129, 0.3));
+}
+
+.wallet-visual.giving {
+  transform: scale(0.98);
+  filter: drop-shadow(0 2px 8px rgba(239, 68, 68, 0.3));
+}
+
+/* Animation Zones */
+.animation-zone {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.animation-zone.entry {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 60px;
+}
+
+.animation-zone.exit {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 60px;
+}
+
+.animation-zone.celebration {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+}
+
+/* Dollar Bill Elements */
+.dollar-bill {
+  position: absolute;
+  width: 40px;
+  height: 20px;
+  background-image: url('Dollar.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* Dollar Bill States Inside Wallet */
+.wallet-bills-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 70px;
+  pointer-events: none;
+}
+
+.dollar-bill.static {
+  position: absolute;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Bill Positioning Based on Balance */
+.dollar-bill.static.bill-1 {
+  top: 35px;
+  left: 30px;
+  transform: rotate(-2deg);
+}
+
+.dollar-bill.static.bill-2 {
+  top: 32px;
+  left: 35px;
+  transform: rotate(1deg);
+  z-index: 21;
+}
+
+.dollar-bill.static.bill-3 {
+  top: 29px;
+  left: 40px;
+  transform: rotate(-1deg);
+  z-index: 22;
+}
+
+.dollar-bill.static.bill-4 {
+  top: 26px;
+  left: 45px;
+  transform: rotate(2deg);
+  z-index: 23;
+}
+
+/* Bill Animation Classes */
+.dollar-bill.entering {
+  animation: billEnter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.dollar-bill.exiting {
+  animation: billExit 0.6s ease-in forwards;
+}
+
+.dollar-bill.celebrating {
+  animation: billCelebrate 1.2s ease-out forwards;
+}
+
+/* Deposit Animation - Bill Enters Wallet */
+@keyframes billEnter {
+  0% {
+    top: -40px;
+    left: 20px;
+    transform: rotate(-15deg) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+    transform: rotate(-8deg) scale(1);
+  }
+  60% {
+    top: 10px;
+    transform: rotate(-3deg) scale(1.05);
+  }
+  100% {
+    top: var(--final-top, 35px);
+    left: var(--final-left, 30px);
+    transform: rotate(var(--final-rotation, -2deg)) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Withdrawal Animation - Bill Exits Wallet */
+@keyframes billExit {
+  0% {
+    transform: rotate(var(--start-rotation, -2deg)) scale(1);
+    opacity: 1;
+  }
+  30% {
+    transform: rotate(-10deg) scale(0.95);
+    top: calc(var(--start-top, 35px) + 10px);
+  }
+  70% {
+    opacity: 0.7;
+    transform: rotate(-20deg) scale(0.8);
+  }
+  100% {
+    top: 80px;
+    left: 60px;
+    transform: rotate(-25deg) scale(0.6);
+    opacity: 0;
+  }
+}
+
+/* Celebration Animation - Bills Dance */
+@keyframes billCelebrate {
+  0%, 100% {
+    transform: rotate(var(--base-rotation, 0deg)) scale(1);
+  }
+  15% {
+    transform: rotate(var(--base-rotation, 0deg)) scale(1.1) translateY(-5px);
+  }
+  30% {
+    transform: rotate(calc(var(--base-rotation, 0deg) + 5deg)) scale(1.05) translateY(-3px);
+  }
+  45% {
+    transform: rotate(calc(var(--base-rotation, 0deg) - 3deg)) scale(1.08) translateY(-7px);
+  }
+  60% {
+    transform: rotate(calc(var(--base-rotation, 0deg) + 2deg)) scale(1.02) translateY(-2px);
+  }
+  75% {
+    transform: rotate(var(--base-rotation, 0deg)) scale(1.06) translateY(-4px);
+  }
+}
+
+/* Floating Number Feedback */
+.floating-feedback {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 50;
+  animation: floatAndFade 1.5s ease-out forwards;
+}
+
+.floating-feedback.positive {
+  color: #10b981;
+  text-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.floating-feedback.negative {
+  color: #ef4444;
+  text-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+@keyframes floatAndFade {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-10px) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-60px) scale(1.3);
+  }
+}
+
+/* Milestone Effects */
+.milestone-effect {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 30;
+}
+
+/* Sparkle Particles for $20 Achievement */
+.sparkle-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fbbf24;
+  border-radius: 50%;
+  animation: sparkleExplode 1.5s ease-out forwards;
+}
+
+@keyframes sparkleExplode {
+  0% {
+    opacity: 1;
+    transform: scale(0) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(360deg) translateX(var(--spark-x, 50px)) translateY(var(--spark-y, 50px));
+  }
+}
+
+/* Confetti Effect */
+.confetti-piece {
+  position: absolute;
+  width: 6px;
+  height: 12px;
+  background: var(--confetti-color, #10b981);
+  animation: confettiFall 2s ease-out forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(-20px) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100px) rotate(720deg) translateX(var(--confetti-drift, 0px));
+  }
+}
+
+/* Wallet Glow Effects */
+.wallet-glow {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.wallet-glow.success {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
+  animation: successGlow 1s ease-out;
+}
+
+.wallet-glow.warning {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.3) 0%, transparent 70%);
+  animation: warningGlow 1s ease-out;
+}
+
+@keyframes successGlow {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes warningGlow {
+  0%, 100% { opacity: 0; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Balance Counter Animation */
+.balance-display {
+  position: relative;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.balance-display.updating {
+  animation: balanceUpdate 0.5s ease-out;
+}
+
+@keyframes balanceUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.balance-display.positive {
+  color: #10b981;
+  text-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.balance-display.negative {
+  color: #ef4444;
+  text-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.balance-display.zero {
+  color: #6b7280;
+}
+
+/* Progressive Enhancement Classes */
+.no-animations .dollar-bill,
+.no-animations .wallet-visual,
+.no-animations .floating-feedback {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 480px) {
+  .wallet-container {
+    padding: 40px 20px;
+    min-height: 250px;
+  }
+  
+  .wallet-visual {
+    width: 100px;
+    height: 75px;
+  }
+  
+  .dollar-bill {
+    width: 32px;
+    height: 16px;
+  }
+  
+  .floating-feedback {
+    font-size: 1.5rem;
+  }
+  
+  .animation-zone.celebration {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .sparkle-particle {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .confetti-piece {
+    width: 4px;
+    height: 8px;
+  }
+}
+
+/* Tablet Optimizations */
+@media (min-width: 768px) {
+  .wallet-container {
+    padding: 80px 60px;
+    min-height: 350px;
+  }
+  
+  .wallet-visual {
+    width: 150px;
+    height: 112px;
+  }
+  
+  .dollar-bill {
+    width: 50px;
+    height: 25px;
+  }
+  
+  .floating-feedback {
+    font-size: 2.5rem;
+  }
+  
+  .animation-zone.celebration {
+    width: 250px;
+    height: 250px;
+  }
+}
+
+/* Desktop Optimizations */
+@media (min-width: 1024px) {
+  .wallet-visual {
+    width: 180px;
+    height: 135px;
+  }
+  
+  .dollar-bill {
+    width: 60px;
+    height: 30px;
+  }
+  
+  .wallet-bills-container {
+    width: 140px;
+    height: 100px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .dollar-bill,
+  .wallet-visual,
+  .floating-feedback,
+  .sparkle-particle,
+  .confetti-piece,
+  .wallet-glow,
+  .balance-display {
+    animation: none !important;
+    transition: opacity 0.2s ease !important;
+  }
+  
+  .dollar-bill.entering,
+  .dollar-bill.exiting {
+    opacity: 1;
+    position: static;
+    transform: none;
+  }
+}
+
+/* High Performance Mode (for older devices) */
+.performance-mode .sparkle-particle,
+.performance-mode .confetti-piece {
+  display: none;
+}
+
+.performance-mode .wallet-glow {
+  animation: none;
+  background: none;
+}
+
+.performance-mode .dollar-bill {
+  transition: opacity 0.2s ease;
+}
+
+/* JavaScript Animation Triggers */
+.js-bill-enter { animation: billEnter 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.js-bill-exit { animation: billExit 0.6s ease-in forwards; }
+.js-bill-celebrate { animation: billCelebrate 1.2s ease-out forwards; }
+.js-wallet-success { animation: successGlow 1s ease-out; }
+.js-wallet-warning { animation: warningGlow 1s ease-out; }
+.js-balance-update { animation: balanceUpdate 0.5s ease-out; }
+.js-float-feedback { animation: floatAndFade 1.5s ease-out forwards; }

@@ -58,22 +58,23 @@
 <section class="iw-instructions">
   <h2>Impulse Wallet</h2>
   <p class="lead">
-    Impulse Wallet is your personal accountability partner. Track your commitments and stay true to the promises you make to yourself. Build momentum by following through on what matters most to you.
+    Impulse Wallet is a simple game to build better habits and control impulses.
+    Good choices add to your wallet, and slips take from it. You want to be the first to reach $20 for the week and maintain it. Anyone that reaches $20 and stays there or above it is a winner. 
   </p>
 
   <h3>How it Works</h3>
   <ol class="steps">
-    <li><strong>Choose Commitments:</strong> Select 2–3 commitment areas that matter to your growth (fitness, work, relationships, mindfulness).</li>
-    <li><strong>Log Follow-Through:</strong> Deposit +$1 when you keep a commitment or stick to a promise you made to yourself.</li>
-    <li><strong>Own Your Setbacks:</strong> Withdraw -$1 when you fall short of your commitments. Accountability means being honest about both wins and misses.</li>
-    <li><strong>Build Consistency:</strong> Your streak shows your commitment to following through. Consistency builds character and self-trust.</li>
-    <li><strong>Weekly Reset:</strong> Every Monday, recommit to your promises. Choose new areas if needed, but stay focused on what matters.</li>
+    <li><strong>Pick Focus Areas:</strong> Choose 2–3 areas (fitness, work, relationships, mindfulness). Most actions should connect here, but they do not have to.</li>
+    <li><strong>Make Deposits:</strong> Log when you act on a positive impulse (exercise, finish a task) or resist a negative one (skip scrolling, avoid procrastination).</li>
+    <li><strong>Log Withdrawals:</strong> Record when you give in to an impulse you meant to resist. Withdrawals reset your streak and show where to focus.</li>
+    <li><strong>Track Streaks:</strong> Consistency matters. More deposits than withdrawals builds momentum.</li>
+    <li><strong>Start Fresh Each Week:</strong> Your wallet resets every Monday so you can refocus and choose new areas if you want.</li>
   </ol>
 
   <h3>The Purpose</h3>
   <p>
-    This is about building self-trust through accountability. By tracking your follow-through,
-    you develop the discipline to keep the promises you make to yourself.
+    It is not about perfection. It is about awareness. By tracking deposits and withdrawals,
+    you build focus, discipline, and self control week by week.
   </p>
 </section>
 
@@ -95,8 +96,8 @@
 <div id="focus-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="focus-title" hidden>
   <div class="modal-content" role="document" tabindex="-1">
     <button id="focus-close" class="modal-close" type="button" aria-label="Close weekly focus">×</button>
-    <h2 id="focus-title">Choose your 2–3 commitment areas</h2>
-    <p class="muted">These commitments lock for the week and reset Monday at 12:01 AM.</p>
+    <h2 id="focus-title">Choose your 2–3 focus areas</h2>
+    <p class="muted">These lock for the week and reset Monday at 12:01 AM.</p>
 
     <form id="focus-form">
    <fieldset class="focus-grid">
@@ -148,78 +149,54 @@
       </div>
 
       <div id="play" class="hidden">
-        <!-- Wallet Header -->
-        <div class="wallet-header">
-          <div class="wallet-meta">
-            <span id="week"></span>
-            <div class="header-actions">
-              <button id="undo" class="secondary">Undo last (15 min)</button>
-              <button id="leave-room" class="secondary hidden">Leave Room</button>
-            </div>
-          </div>
-          
-          <div class="wallet-balance-row">
-            <div class="wallet-container">
-              <div class="wallet-image" id="wallet-display"></div>
-            </div>
-            <div class="balance-display">
-              <div class="balance-amount" id="current-balance">$0</div>
-              <div class="balance-label">Current Balance</div>
-            </div>
+        <div class="meta">
+          <span id="week"></span>
+          <div class="button-group">
+            <button id="undo" class="secondary">Undo last (15 min)</button>
+            <button id="leave-room" class="secondary hidden">Leave Room</button>
           </div>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="main-content">
-          <!-- Focus Areas (Left) -->
-          <div class="focus-areas">
-            <div class="section-title">Your Commitments</div>
-            
-            <!-- Focus Area Selection Prompt (shown when no areas selected) -->
-            <div class="focus-selection-prompt" id="focus-selection-prompt" onclick="openFocusModal()">
-              <div class="focus-prompt-title">Choose Your Focus</div>
-              <div class="focus-prompt-subtitle">
-                Choose 3 commitment areas for this week.<br>
-                Click here to get started!
-              </div>
-            </div>
-            
-            <!-- Selected Focus Areas (shown when areas are chosen) -->
-            <div id="focus-chips" class="focus-chips hidden" aria-label="Weekly focus areas"></div>
-          </div>
+        <!-- Weekly Focus chips appear here once set -->
+        <div id="focus-chips" class="focus-chips" aria-label="Weekly focus areas"></div>
 
-          <!-- Actions (Right) -->
-          <div class="balance-actions">
-            <div class="section-title">Actions</div>
-            <button id="plus" class="action-button deposit-btn">
-              Kept Commitment +$1
-            </button>
-            <button id="minus" class="action-button withdraw-btn">
-              Missed Commitment -$1
-            </button>
-            
-            <!-- Custom Note Field -->
-            <div class="note-section">
-              <input type="text" id="impulse" class="note-input" placeholder="Add note (optional)" maxlength="100">
+        <div class="controls">
+          <input id="impulse" placeholder="Optional impulse label" />
+          <button id="plus" class="good celebration-btn">Deposit +$1</button>
+          <button id="minus" class="bad celebration-btn">Withdrawal −$1</button>
+        </div>
+
+        <!-- Custom Note Field (Expandable) -->
+        <div class="note-field-container">
+          <button id="note-toggle" class="note-toggle" type="button" aria-expanded="false" aria-controls="note-field">
+            <span class="note-icon">📝</span>
+            <span class="note-toggle-text">Add note</span>
+            <span class="note-toggle-arrow">▼</span>
+          </button>
+          <div id="note-field" class="note-field hidden" aria-label="Additional note for your entry">
+            <textarea id="note-input" placeholder="Add context for this entry (optional)..." maxlength="200" rows="2"></textarea>
+            <div class="note-field-footer">
+              <span class="note-char-count">0/200</span>
+              <button id="note-clear" class="note-clear" type="button" aria-label="Clear note">Clear</button>
             </div>
           </div>
         </div>
 
         <div id="banner" class="hidden banner"></div>
 
-        <!-- Leaderboard -->
-        <div class="leaderboard">
-          <div class="leaderboard-title">Leaderboard</div>
-          <table id="board">
-            <thead><tr><th>Player</th><th>Balance</th><th>Longest streak</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <h2>Leaderboard (this week)</h2>
+        <table id="board">
+          <thead><tr><th>Player</th><th>Balance</th><th>Longest streak</th></tr></thead>
+          <tbody></tbody>
+        </table>
 
-        <!-- My History Button -->
-        <button id="history-open" class="history-button" type="button" aria-haspopup="dialog" aria-controls="history-modal">
-          My History
-        </button>
+        <!-- History now opens in a modal -->
+        <div class="history-section">
+          <h2>My history</h2>
+          <button id="history-open" class="secondary" type="button" aria-haspopup="dialog" aria-controls="history-modal">
+            View My History
+          </button>
+        </div>
       </div>
     </section>
       <!-- Footer -->

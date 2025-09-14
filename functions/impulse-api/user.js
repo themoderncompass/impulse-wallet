@@ -70,7 +70,7 @@ export async function onRequestGet({ request, env }) {
     await ensureUserTable(env);
 
     const user = await env.DB.prepare(
-      'SELECT id, email, display_name, created_at FROM users WHERE id = ?'
+      'SELECT id, email, display_name, onboarding_completed, onboarding_completed_at, created_at FROM users WHERE id = ?'
     ).bind(userId).first();
 
     if (!user) {
@@ -81,11 +81,66 @@ export async function onRequestGet({ request, env }) {
       userId: user.id,
       email: user.email,
       displayName: user.display_name,
+      onboardingCompleted: !!user.onboarding_completed,
+      onboardingCompletedAt: user.onboarding_completed_at,
       createdAt: user.created_at
     });
 
   } catch (error) {
     console.error('User fetch error:', error);
+    return json({ error: error.message || 'Internal server error' }, 500);
+  }
+}
+
+// PATCH /impulse-api/user - Update user onboarding completion
+export async function onRequestPatch({ request, env }) {
+  try {
+    const payload = await request.json().catch(() => ({}));
+    const { userId, onboardingCompleted } = payload;
+
+    if (!userId || typeof userId !== 'string') {
+      return json({ error: 'userId required' }, 400);
+    }
+
+    if (typeof onboardingCompleted !== 'boolean') {
+      return json({ error: 'onboardingCompleted boolean required' }, 400);
+    }
+
+    await ensureUserTable(env);
+
+    // Check if user exists
+    const user = await env.DB.prepare(
+      'SELECT id FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user) {
+      return json({ error: 'User not found' }, 404);
+    }
+
+    // Update onboarding status
+    await env.DB.prepare(`
+      UPDATE users 
+      SET onboarding_completed = ?, 
+          onboarding_completed_at = CASE WHEN ? = 1 THEN datetime('now') ELSE NULL END,
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(onboardingCompleted ? 1 : 0, onboardingCompleted ? 1 : 0, userId).run();
+
+    // Log onboarding completion event
+    if (onboardingCompleted) {
+      await logEvent(env, 'onboarding_completed', {
+        userId
+      });
+    }
+
+    return json({
+      userId,
+      onboardingCompleted,
+      updated: true
+    });
+
+  } catch (error) {
+    console.error('User update error:', error);
     return json({ error: error.message || 'Internal server error' }, 500);
   }
 }

@@ -1,0 +1,612 @@
+/* ==========================================
+   IMPULSE WALLET - RESPONSIVE LAYOUT SPECIFICATIONS
+   ========================================== */
+
+/* CSS Custom Properties for Responsive Design */
+:root {
+  /* Breakpoint Variables */
+  --mobile-max: 480px;
+  --tablet-min: 481px;
+  --tablet-max: 768px;
+  --desktop-min: 769px;
+  --large-desktop-min: 1200px;
+  
+  /* Spacing Scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  
+  /* Component Sizes */
+  --wallet-size-mobile: 100px;
+  --wallet-size-tablet: 140px;
+  --wallet-size-desktop: 180px;
+  
+  --badge-size-mobile: 70px;
+  --badge-size-tablet: 90px;
+  --badge-size-desktop: 100px;
+  
+  --button-height-mobile: 44px;
+  --button-height-tablet: 48px;
+  --button-height-desktop: 52px;
+}
+
+/* ==========================================
+   MOBILE-FIRST BASE STYLES (0-480px)
+   ========================================== */
+
+/* Container and Layout */
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: var(--space-md);
+  gap: var(--space-md);
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Header - Mobile */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) 0;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  flex: 1;
+}
+
+.app-logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.app-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+/* Main Wallet Section - Mobile */
+.wallet-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: var(--space-lg);
+  margin: var(--space-md) 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  min-height: 300px;
+}
+
+/* Focus Areas - Mobile (Horizontal Row) */
+.focus-areas {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-bottom: var(--space-lg);
+  gap: var(--space-sm);
+  order: 1;
+}
+
+/* Wallet Visual - Mobile */
+.wallet-container {
+  order: 2;
+  margin: var(--space-lg) 0;
+}
+
+.wallet-visual {
+  width: var(--wallet-size-mobile);
+  height: calc(var(--wallet-size-mobile) * 0.75);
+}
+
+/* Balance & Actions - Mobile (Below Wallet) */
+.balance-actions-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  order: 3;
+}
+
+.balance-display {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  max-width: 280px;
+}
+
+.action-button {
+  height: var(--button-height-mobile);
+  border-radius: 12px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+/* Leaderboard - Mobile */
+.leaderboard-section {
+  order: 4;
+  margin-top: var(--space-lg);
+}
+
+.player-row {
+  padding: var(--space-sm);
+  margin: var(--space-xs) 0;
+}
+
+.player-avatar {
+  width: 32px;
+  height: 32px;
+}
+
+.progress-container {
+  height: 16px;
+}
+
+/* Quick Access Panel - Mobile */
+.quick-access-panel {
+  order: 5;
+  margin-top: var(--space-md);
+}
+
+/* ==========================================
+   LARGE MOBILE / SMALL TABLET (481-768px)
+   ========================================== */
+
+@media (min-width: 481px) {
+  :root {
+    --space-md: 20px;
+    --space-lg: 28px;
+    --space-xl: 36px;
+  }
+  
+  .main-container {
+    padding: var(--space-lg);
+    gap: var(--space-lg);
+  }
+  
+  .app-logo {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .app-title {
+    font-size: var(--text-xl);
+  }
+  
+  .wallet-visual {
+    width: calc(var(--wallet-size-mobile) + 20px);
+    height: calc((var(--wallet-size-mobile) + 20px) * 0.75);
+  }
+  
+  .balance-display {
+    font-size: var(--text-4xl);
+  }
+  
+  .action-buttons {
+    flex-direction: row;
+    max-width: 100%;
+  }
+  
+  .action-button {
+    flex: 1;
+    max-width: 200px;
+  }
+  
+  .player-avatar {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .progress-container {
+    height: 18px;
+  }
+}
+
+/* ==========================================
+   TABLET LAYOUT (769-1023px)
+   ========================================== */
+
+@media (min-width: 769px) {
+  :root {
+    --space-md: 24px;
+    --space-lg: 32px;
+    --space-xl: 40px;
+    --space-2xl: 56px;
+  }
+  
+  .main-container {
+    max-width: 1000px;
+    padding: var(--space-2xl) var(--space-lg);
+  }
+  
+  .app-logo {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .app-title {
+    font-size: var(--text-2xl);
+  }
+  
+  /* Two-Column Layout Emerges */
+  .wallet-section {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-areas: 
+      "focus wallet actions"
+      "focus wallet actions"
+      "leaderboard leaderboard leaderboard";
+    align-items: start;
+    gap: var(--space-xl);
+    padding: var(--space-2xl);
+    min-height: 400px;
+  }
+  
+  .focus-areas {
+    grid-area: focus;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: var(--space-md);
+    margin-bottom: 0;
+  }
+  
+  .wallet-container {
+    grid-area: wallet;
+    margin: 0;
+    align-self: center;
+  }
+  
+  .wallet-visual {
+    width: var(--wallet-size-tablet);
+    height: calc(var(--wallet-size-tablet) * 0.75);
+  }
+  
+  .balance-actions-section {
+    grid-area: actions;
+    align-items: flex-end;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    max-width: 180px;
+  }
+  
+  .action-button {
+    height: var(--button-height-tablet);
+  }
+  
+  .leaderboard-section {
+    grid-area: leaderboard;
+    margin-top: var(--space-lg);
+  }
+  
+  .player-avatar {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .progress-container {
+    height: 20px;
+  }
+  
+  .quick-access-panel {
+    order: 6;
+    margin-top: var(--space-xl);
+  }
+}
+
+/* ==========================================
+   DESKTOP LAYOUT (1024-1199px)
+   ========================================== */
+
+@media (min-width: 1024px) {
+  .main-container {
+    max-width: 1200px;
+    padding: var(--space-2xl);
+  }
+  
+  .app-logo {
+    width: 64px;
+    height: 64px;
+  }
+  
+  /* Three-Column Layout */
+  .wallet-section {
+    grid-template-columns: 200px 1fr 200px;
+    grid-template-areas: 
+      "focus wallet actions"
+      "focus wallet actions"
+      "leaderboard leaderboard leaderboard";
+    gap: var(--space-2xl);
+    padding: var(--space-2xl) var(--space-xl);
+  }
+  
+  .wallet-visual {
+    width: var(--wallet-size-desktop);
+    height: calc(var(--wallet-size-desktop) * 0.75);
+  }
+  
+  .focus-areas {
+    gap: var(--space-lg);
+  }
+  
+  .action-button {
+    height: var(--button-height-desktop);
+    font-size: var(--text-lg);
+  }
+  
+  .balance-display {
+    font-size: 3rem;
+  }
+  
+  /* Enhanced hover states for desktop */
+  .action-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .focus-badge:hover {
+    transform: scale(1.05) translateY(-2px);
+  }
+  
+  .player-row:hover {
+    transform: translateX(4px);
+    background: rgba(59, 130, 246, 0.05);
+  }
+}
+
+/* ==========================================
+   LARGE DESKTOP LAYOUT (1200px+)
+   ========================================== */
+
+@media (min-width: 1200px) {
+  .main-container {
+    max-width: 1400px;
+  }
+  
+  .wallet-section {
+    grid-template-columns: 220px 1fr 220px;
+    padding: var(--space-2xl) var(--space-2xl);
+  }
+  
+  .app-title {
+    font-size: var(--text-3xl);
+  }
+  
+  /* Full leaderboard visibility */
+  .leaderboard-section {
+    max-height: none;
+  }
+  
+  /* More breathing room */
+  .focus-areas {
+    gap: var(--space-xl);
+  }
+  
+  .balance-actions-section {
+    gap: var(--space-xl);
+  }
+}
+
+/* ==========================================
+   ULTRA-WIDE DESKTOP (1600px+)
+   ========================================== */
+
+@media (min-width: 1600px) {
+  .main-container {
+    max-width: 1600px;
+  }
+  
+  .wallet-section {
+    grid-template-columns: 250px 1fr 250px;
+    gap: 4rem;
+  }
+  
+  /* Prevent over-scaling on very large screens */
+  .wallet-visual {
+    max-width: 220px;
+    max-height: 165px;
+  }
+  
+  .balance-display {
+    font-size: 3.5rem;
+  }
+}
+
+/* ==========================================
+   ORIENTATION HANDLING
+   ========================================== */
+
+/* Landscape on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .wallet-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+      "wallet actions"
+      "focus focus"
+      "leaderboard leaderboard";
+    padding: var(--space-md);
+    min-height: auto;
+  }
+  
+  .focus-areas {
+    flex-direction: row;
+    justify-content: space-around;
+  }
+  
+  .balance-actions-section {
+    align-items: center;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    max-width: 160px;
+  }
+}
+
+/* ==========================================
+   ACCESSIBILITY & USABILITY
+   ========================================== */
+
+/* Touch targets */
+@media (max-width: 768px) {
+  .action-button,
+  .focus-badge,
+  .quick-action {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Focus indicators */
+.focus-badge:focus,
+.action-button:focus,
+.quick-action:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .wallet-section {
+    border: 2px solid #000;
+  }
+  
+  .focus-badge,
+  .action-button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+
+@media print {
+  .header-actions,
+  .quick-access-panel,
+  .action-buttons {
+    display: none;
+  }
+  
+  .wallet-section {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  
+  .main-container {
+    max-width: none;
+    padding: 0;
+  }
+}
+
+/* ==========================================
+   DARK MODE RESPONSIVE
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+  .wallet-section {
+    background: rgba(17, 24, 39, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .app-title {
+    color: #f9fafb;
+  }
+  
+  .balance-display {
+    color: #f9fafb;
+  }
+  
+  .balance-display.positive {
+    color: #34d399;
+  }
+  
+  .balance-display.negative {
+    color: #fca5a5;
+  }
+}
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATIONS
+   ========================================== */
+
+/* Reduce motion for better performance on lower-end devices */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* GPU acceleration for smooth animations */
+.wallet-visual,
+.focus-badge,
+.action-button,
+.player-row {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Container queries (future enhancement) */
+@supports (container-type: inline-size) {
+  .wallet-section {
+    container-type: inline-size;
+  }
+  
+  @container (min-width: 600px) {
+    .focus-areas {
+      flex-direction: column;
+    }
+  }
+}

@@ -215,7 +215,13 @@ const el = {
   historyTable: $("#history-tbody"),
   historyMonths: $("#history-months"),
   historyCsv: $("#history-csv"),
-  historyRefresh: $("#history-refresh")
+  historyRefresh: $("#history-refresh"),
+  // Note field elements
+  noteToggle: $("#note-toggle"),
+  noteField: $("#note-field"),
+  noteInput: $("#note-input"),
+  noteClear: $("#note-clear"),
+  noteCharCount: $(".note-char-count")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
 document.addEventListener('DOMContentLoaded', async () => {
@@ -569,15 +575,31 @@ async function submit(amount) {
     playSfx(amount === 1 ? "good" : "bad");
 
     const impulse = (el.impulse.value || "").trim();
+    const note = (el.noteInput?.value || "").trim();
+    
+    // Combine impulse and note for the entry
+    const entryData = { delta: amount, label: impulse, userId: currentUserId };
+    if (note) {
+      entryData.note = note;
+    }
+    
     await api("/state", {
       method: "POST",
       body: JSON.stringify({
         roomCode,
-        entry: { delta: amount, label: impulse, userId: currentUserId }
+        entry: entryData
       })
     });
 
     el.impulse.value = "";
+    if (el.noteInput) {
+      el.noteInput.value = "";
+      updateCharCount();
+      // Auto-collapse note field after submission
+      if (el.noteField && !el.noteField.classList.contains('hidden')) {
+        toggleNoteField();
+      }
+    }
     await refresh();
   } catch (e) {
     const msg = String(e.message || "");
@@ -645,6 +667,103 @@ el.leaveBtn?.addEventListener("click", () => {
   if (confirm("Are you sure you want to leave this room? You can rejoin anytime with the same room code.")) {
     leaveRoom();
   }
+});
+
+// ===== Note Field Functionality =====
+
+// Toggle note field visibility
+function toggleNoteField() {
+  if (!el.noteField || !el.noteToggle) return;
+  
+  const isHidden = el.noteField.classList.contains('hidden');
+  
+  if (isHidden) {
+    // Show note field
+    el.noteField.classList.remove('hidden');
+    el.noteField.classList.add('show');
+    el.noteToggle.setAttribute('aria-expanded', 'true');
+    el.noteToggle.querySelector('.note-toggle-text').textContent = 'Hide note';
+    
+    // Focus the textarea after animation
+    setTimeout(() => {
+      el.noteInput?.focus();
+    }, 100);
+  } else {
+    // Hide note field
+    el.noteField.classList.remove('show');
+    el.noteField.classList.add('hidden');
+    el.noteToggle.setAttribute('aria-expanded', 'false');
+    el.noteToggle.querySelector('.note-toggle-text').textContent = 'Add note';
+  }
+}
+
+// Update character count display
+function updateCharCount() {
+  if (!el.noteInput || !el.noteCharCount) return;
+  
+  const currentLength = el.noteInput.value.length;
+  const maxLength = parseInt(el.noteInput.getAttribute('maxlength')) || 200;
+  
+  el.noteCharCount.textContent = `${currentLength}/${maxLength}`;
+  
+  // Update styling based on character count
+  el.noteCharCount.classList.remove('warning', 'error');
+  if (currentLength > maxLength * 0.9) {
+    el.noteCharCount.classList.add('error');
+  } else if (currentLength > maxLength * 0.75) {
+    el.noteCharCount.classList.add('warning');
+  }
+}
+
+// Clear note field
+function clearNoteField() {
+  if (!el.noteInput) return;
+  
+  el.noteInput.value = '';
+  updateCharCount();
+  el.noteInput.focus();
+}
+
+// Note field event listeners
+el.noteToggle?.addEventListener('click', toggleNoteField);
+el.noteClear?.addEventListener('click', clearNoteField);
+el.noteInput?.addEventListener('input', updateCharCount);
+
+// Handle keyboard shortcuts
+el.noteInput?.addEventListener('keydown', (e) => {
+  // Escape key to close note field
+  if (e.key === 'Escape') {
+    toggleNoteField();
+    e.preventDefault();
+  }
+  
+  // Ctrl/Cmd + Enter to submit (focus main action)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    // Focus the plus button as default action
+    el.plus?.focus();
+  }
+});
+
+// Auto-collapse note field when clicking outside
+document.addEventListener('click', (e) => {
+  if (!el.noteField || !el.noteToggle) return;
+  
+  const noteContainer = document.querySelector('.note-field-container');
+  const isClickInsideNote = noteContainer && noteContainer.contains(e.target);
+  const isNoteVisible = !el.noteField.classList.contains('hidden');
+  
+  if (isNoteVisible && !isClickInsideNote) {
+    // Only auto-collapse if the field is empty
+    if (!el.noteInput?.value.trim()) {
+      toggleNoteField();
+    }
+  }
+});
+
+// Initialize character count on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateCharCount();
 });
 
 
@@ -1070,6 +1189,9 @@ function initHistoryModal() {
     if (totalEl) totalEl.textContent = totalEntries;
     if (balanceEl) balanceEl.textContent = `$${currentBalance}`;
     if (streakEl) streakEl.textContent = bestStreak;
+    
+    // Update wallet image based on balance
+    updateWalletImage(currentBalance);
   }
   
   function renderHistoryTable() {
@@ -1521,3 +1643,60 @@ function enhanceButtonClicks() {
 document.addEventListener('DOMContentLoaded', function() {
   enhanceButtonClicks();
 });
+
+// ===== WALLET IMAGE SYSTEM =====
+
+function updateWalletImage(balance) {
+  const walletImage = document.getElementById('wallet-display');
+  if (!walletImage) return;
+  
+  let imageName = 'Wallet empty.png';
+  
+  // Use all 5 wallet states based on dollar amount
+  if (balance >= 15) imageName = 'Wallet 4 bills.png';
+  else if (balance >= 10) imageName = 'Wallet 3 bills.png';
+  else if (balance >= 5) imageName = 'Wallet 2 bills.png';
+  else if (balance >= 1) imageName = 'Wallet 1 bill.png';
+  else imageName = 'Wallet empty.png';
+  
+  // Add animation class
+  walletImage.classList.add('updating');
+  
+  // Update image
+  walletImage.style.backgroundImage = `url('wallet-assets/${imageName}')`;
+  
+  // Remove animation class after animation completes
+  setTimeout(() => {
+    walletImage.classList.remove('updating');
+  }, 500);
+}
+
+// Focus modal functionality
+function openFocusModal() {
+  const focusModal = document.getElementById('focus-modal');
+  if (focusModal) {
+    focusModal.hidden = false;
+  }
+}
+
+// Update focus area display
+function updateFocusDisplay(focusAreas) {
+  const focusPrompt = document.getElementById('focus-selection-prompt');
+  const focusChips = document.getElementById('focus-chips');
+  
+  if (focusAreas && focusAreas.length > 0) {
+    // Hide prompt, show focus chips
+    if (focusPrompt) focusPrompt.style.display = 'none';
+    if (focusChips) {
+      focusChips.classList.remove('hidden');
+      focusChips.style.display = 'block';
+    }
+  } else {
+    // Show prompt, hide focus chips
+    if (focusPrompt) focusPrompt.style.display = 'flex';
+    if (focusChips) {
+      focusChips.classList.add('hidden');
+      focusChips.style.display = 'none';
+    }
+  }
+}
