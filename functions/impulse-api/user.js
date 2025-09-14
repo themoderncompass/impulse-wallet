@@ -34,7 +34,7 @@ export async function onRequestPost({ request, env }) {
         email = COALESCE(excluded.email, email),
         display_name = COALESCE(excluded.display_name, display_name),
         updated_at = datetime('now')
-    `, [userId, email, displayName]);
+    `, [userId, email || null, displayName || null]);
     
     // Log user creation/update event
     await logEvent(env, 'user_upserted', {

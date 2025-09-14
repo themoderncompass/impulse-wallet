@@ -2025,11 +2025,17 @@ function initOnboarding() {
     onboardingCompleted = true;
     return;
   }
-  
+
+  // TEMPORARY: Skip onboarding for development
+  console.log("🚧 Skipping onboarding for development");
+  localStorage.setItem("onboardingCompleted", "true");
+  onboardingCompleted = true;
+  return;
+
   console.log("🎓 Starting onboarding...");
   onboardingCompleted = false;
   currentOnboardingStep = 0;
-  
+
   // Start onboarding after brief delay
   setTimeout(() => {
     hideNonEssentialElements();
