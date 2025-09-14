@@ -58,16 +58,16 @@
 <section class="iw-instructions">
   <h2>Impulse Wallet</h2>
   <p class="lead">
-    Impulse Wallet is your personal accountability partner. Track your commitments and stay true to the promises you make to yourself. Build momentum by following through on what matters most to you.
+    Impulse Wallet helps you track positive actions and resist negative impulses. Build momentum by logging when you follow through and being honest when you don't.
   </p>
 
   <h3>How it Works</h3>
   <ol class="steps">
-    <li><strong>Choose Commitments:</strong> Select 2–3 commitment areas that matter to your growth (fitness, work, relationships, mindfulness).</li>
-    <li><strong>Log Follow-Through:</strong> Deposit +$1 when you keep a commitment or stick to a promise you made to yourself.</li>
-    <li><strong>Own Your Setbacks:</strong> Withdraw -$1 when you fall short of your commitments. Accountability means being honest about both wins and misses.</li>
-    <li><strong>Build Consistency:</strong> Your streak shows your commitment to following through. Consistency builds character and self-trust.</li>
-    <li><strong>Weekly Reset:</strong> Every Monday, recommit to your promises. Choose new areas if needed, but stay focused on what matters.</li>
+    <li><strong>Pick Focus Areas:</strong> Choose 2–3 areas (fitness, work, relationships, mindfulness). Most actions should connect here, but they do not have to.</li>
+    <li><strong>Make Deposits:</strong> Log when you act on a positive impulse (exercise, finish a task) or resist a negative one (skip scrolling, avoid procrastination).</li>
+    <li><strong>Log Withdrawals:</strong> Record when you give in to an impulse you meant to resist. Withdrawals reset your streak and show where to focus.</li>
+    <li><strong>Track Streaks:</strong> Consistency matters. More deposits than withdrawals builds momentum.</li>
+    <li><strong>Start Fresh Each Week:</strong> Your wallet resets every Monday so you can refocus and choose new areas if you want.</li>
   </ol>
 
   <h3>The Purpose</h3>
@@ -95,8 +95,8 @@
 <div id="focus-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="focus-title" hidden>
   <div class="modal-content" role="document" tabindex="-1">
     <button id="focus-close" class="modal-close" type="button" aria-label="Close weekly focus">×</button>
-    <h2 id="focus-title">Choose your 2–3 commitment areas</h2>
-    <p class="muted">These commitments lock for the week and reset Monday at 12:01 AM.</p>
+    <h2 id="focus-title">Choose your 2–3 focus areas</h2>
+    <p class="muted">These lock for the week and reset Monday at 12:01 AM.</p>
 
     <form id="focus-form">
    <fieldset class="focus-grid">
@@ -173,13 +173,13 @@
         <div class="main-content">
           <!-- Focus Areas (Left) -->
           <div class="focus-areas">
-            <div class="section-title">Your Commitments</div>
+            <div class="section-title">Focus Areas</div>
             
             <!-- Focus Area Selection Prompt (shown when no areas selected) -->
             <div class="focus-selection-prompt" id="focus-selection-prompt" onclick="openFocusModal()">
               <div class="focus-prompt-title">Choose Your Focus</div>
               <div class="focus-prompt-subtitle">
-                Choose 3 commitment areas for this week.<br>
+                Choose 3 focus areas for this week.<br>
                 Click here to get started!
               </div>
             </div>
@@ -192,10 +192,10 @@
           <div class="balance-actions">
             <div class="section-title">Actions</div>
             <button id="plus" class="action-button deposit-btn">
-              Kept Commitment +$1
+              Deposit +$1
             </button>
             <button id="minus" class="action-button withdraw-btn">
-              Missed Commitment -$1
+              Withdrawal −$1
             </button>
             
             <!-- Custom Note Field -->
@@ -458,7 +458,7 @@
           <div class="stat-label">Total Entries</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="current-balance">—</div>
+          <div class="stat-value" id="history-balance">—</div>
           <div class="stat-label">Current Balance</div>
         </div>
         <div class="stat-card">

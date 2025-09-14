@@ -79,7 +79,24 @@ function clearSession() {
   try { localStorage.removeItem(IW_KEY); } catch {}
 }
 // --- leave room (client-only) ---
-function leaveRoom({ redirect = true } = {}) {
+async function leaveRoom({ redirect = true } = {}) {
+  try {
+    // Call backend to properly remove user from room
+    if (roomCode && currentUserId) {
+      await api("/room-leave", {
+        method: "POST",
+        body: JSON.stringify({
+          roomCode: roomCode,
+          userId: currentUserId,
+          confirmed: true
+        })
+      });
+    }
+  } catch (error) {
+    console.error("Error leaving room:", error);
+    // Continue with client cleanup even if backend fails
+  }
+  
   try { clearSession(); } catch {}
   roomCode = "";
   displayName = "";
@@ -227,6 +244,9 @@ const el = {
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize anonymous user system
   initUserSystem();
+  
+  // Initialize focus display to show selection prompt for new users
+  updateFocusDisplay([]);
   
   // Session restoration code (moved inside the function)
   const s = getSession(); // {roomCode, displayName} or null
@@ -411,9 +431,16 @@ function paint(state) {
   const rows = Array.from(stats.entries()).sort((a, b) => b[1].balance - a[1].balance);
   for (const [name, s] of rows) {
     const tr = document.createElement("tr");
+    // Calculate progress toward $20 goal (capped at 100%)
+    const progressPercent = Math.min(Math.max((s.balance / 20) * 100, 0), 100);
     tr.innerHTML = `
       <td>${h(name)}</td>
-      <td>${s.balance}</td>
+      <td>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progressPercent}%"></div>
+        </div>
+        <div class="balance-amount">$${s.balance}</div>
+      </td>
       <td>${s.longestStreak || 0}</td>
     `;
     el.board.appendChild(tr);
@@ -437,28 +464,66 @@ const when = row.created_at
     el.mine.appendChild(tr);
   });
 
-  // Weekly milestone banners and celebrations based on this week's totals only
-  const me = stats.get(displayName);
-  if (me) {
-    // Celebration for reaching +$20 (only trigger once per milestone achievement)
-    if (me.balance >= 20 && lastCelebrationBalance !== me.balance) {
-      show("You hit +$20 this week. Keep going.");
-      showCelebration();
-      lastCelebrationBalance = me.balance;
+  // Update balance display - find current user's balance from stats
+  const userId = currentUserId || getUserId();
+  
+  // Try to find current user's stats by displayName first, then by finding their name from history
+  let me = null;
+  let currentUserName = displayName;
+  
+  if (displayName) {
+    me = stats.get(displayName);
+  }
+  
+  // If no stats found and we have history, find user's name from their entries
+  if (!me && userId && history.length > 0) {
+    // Look for entries from current user ID in the full history to get their name
+    for (const entry of history) {
+      // Note: API doesn't return userId in history, so we need another approach
+      break;
     }
-    
-    // Warning for hitting -$20 (only trigger once per milestone)
-    if (me.balance <= -20 && lastWarningBalance !== me.balance) {
-      show("You hit −$20 this week. Keep tracking.", true);
-      showWarning();
-      lastWarningBalance = me.balance;
+  }
+  
+  // If still no stats, check all players in stats to see if any match our expected pattern
+  if (!me && history.length > 0) {
+    // If there's only one player in the room, assume it's the current user
+    const playerNames = Array.from(stats.keys());
+    if (playerNames.length === 1) {
+      currentUserName = playerNames[0];
+      me = stats.get(currentUserName);
     }
-    
-    // Reset milestone tracking if balance changes significantly
-    if (me.balance > -20 && me.balance < 20) {
-      lastCelebrationBalance = null;
-      lastWarningBalance = null;
-    }
+  }
+  
+  // Ensure we always have stats for balance display (default to 0)
+  if (!me) {
+    me = { balance: 0, currentStreak: 0, longestStreak: 0 };
+  }
+  
+  // Update balance display
+  const balanceEl = document.getElementById('current-balance');  
+  if (balanceEl) balanceEl.textContent = `$${me.balance}`;
+  
+  // Update wallet image based on balance
+  updateWalletImage(me.balance);
+  
+  // Celebration for reaching +$20 (only trigger once per milestone achievement)
+  if (me.balance >= 20 && lastCelebrationBalance !== me.balance) {
+    show("You hit +$20 this week. Keep going.");
+    showCelebration();
+    lastCelebrationBalance = me.balance;
+  }
+  
+  // Warning for hitting -$20 (only trigger once per milestone)
+  if (me.balance <= -20 && lastWarningBalance !== me.balance) {
+    show("You hit −$20 this week. Keep tracking.", true);
+    showWarning();
+    lastWarningBalance = me.balance;
+  }
+  
+  // Reset milestone tracking if balance changes significantly
+  if (me.balance > -20 && me.balance < 20) {
+    lastCelebrationBalance = null;
+    lastWarningBalance = null;
   }
 }
 
@@ -922,6 +987,7 @@ function setFocusLockedUI(locked, areas) {
   }
   
   renderFocusChips(areas);
+  updateFocusDisplay(areas);
 }
 
 // Helpers for selection state and limit
@@ -962,6 +1028,8 @@ async function initWeeklyFocusUI() {
     if (focusEl.error) {
       focusEl.error.textContent = "Could not load focus areas. Please try again.";
     }
+    // Ensure UI shows selection prompt when there's an error loading areas
+    updateFocusDisplay([]);
   }
 }
 
@@ -1189,6 +1257,10 @@ function initHistoryModal() {
     if (totalEl) totalEl.textContent = totalEntries;
     if (balanceEl) balanceEl.textContent = `$${currentBalance}`;
     if (streakEl) streakEl.textContent = bestStreak;
+    
+    // Also update history modal balance
+    const historyBalanceEl = document.getElementById('history-balance');
+    if (historyBalanceEl) historyBalanceEl.textContent = `$${currentBalance}`;
     
     // Update wallet image based on balance
     updateWalletImage(currentBalance);
