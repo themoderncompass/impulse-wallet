@@ -994,6 +994,278 @@ th, td {
   box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
 }
 
+.chip-emoji {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.chip-label {
+  flex: 1;
+}
+
+/* COMPREHENSIVE MOBILE SPACING OPTIMIZATIONS FOR NO-SCROLL DESIGN */
+@media (max-width: 768px) {
+  /* CONTAINER AND GLOBAL SPACING */
+  .container {
+    margin: 0.5rem auto !important;
+    padding: 0 0.5rem !important;
+    max-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  /* HEADER - MINIMAL SPACING */
+  .header {
+    margin-bottom: 0.5rem !important;
+    padding: 0.25rem !important;
+  }
+
+  .header h1 {
+    font-size: 1.4rem !important;
+    margin: 0 !important;
+  }
+
+  .header-actions {
+    gap: 0.5rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  .header-btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+
+  /* WALLET HEADER - COMPACT DESIGN */
+  .wallet-header {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .wallet-meta {
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* WALLET BALANCE ROW - ULTRA COMPACT */
+  .wallet-balance-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin: 0.25rem 0 !important;
+  }
+
+  .wallet-container {
+    flex: 0 0 auto;
+    order: 1;
+  }
+
+  .balance-display {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    order: 2;
+  }
+
+  .balance-amount {
+    font-size: 20px !important;
+    margin-bottom: 2px !important;
+  }
+
+  .balance-label {
+    font-size: 10px !important;
+  }
+
+  /* MOBILE WALLET IMAGE - SIGNIFICANTLY SMALLER */
+  .wallet-image {
+    width: 160px !important;
+    height: 107px !important;
+  }
+
+  /* MOBILE FOCUS BADGES - COMPACT ROW */
+  .mobile-focus-badges {
+    flex: 1;
+    display: flex !important;
+    flex-direction: row;
+    gap: 4px;
+    justify-content: center;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0 !important;
+    padding: 0 !important;
+    order: 3;
+  }
+
+  .mobile-focus-badges .chip {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    padding: 0;
+    min-height: auto;
+    background: linear-gradient(145deg, #4a90e2, #2563eb);
+    font-size: 14px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-focus-badges .chip-emoji {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .mobile-focus-badges .chip-label {
+    display: none;
+  }
+
+  /* MAIN CONTENT - MINIMAL GAPS */
+  .main-content {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* FOCUS AREAS - COMPACT */
+  .focus-areas {
+    order: 1;
+    gap: 0.5rem !important;
+    padding: 0 2px !important;
+    margin: 0 !important;
+  }
+
+  .focus-areas .focus-chips {
+    display: none !important;
+  }
+
+  .section-title {
+    font-size: 13px !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .focus-selection-prompt {
+    padding: 12px 16px !important;
+    min-height: 60px !important;
+    margin: 0 !important;
+  }
+
+  .focus-prompt-title {
+    font-size: 12px !important;
+    margin-bottom: 3px !important;
+  }
+
+  .focus-prompt-subtitle {
+    font-size: 10px !important;
+  }
+
+  /* BALANCE ACTIONS - COMPACT BUTTONS */
+  .balance-actions {
+    order: 2;
+    gap: 0.5rem !important;
+    padding: 0 2px !important;
+    margin: 0 !important;
+  }
+
+  .action-button {
+    padding: 14px 16px !important;
+    font-size: 12px !important;
+    min-height: 44px; /* Maintain touch target */
+  }
+
+  /* LEADERBOARD - MINIMAL SPACING */
+  .leaderboard {
+    margin-bottom: 0.75rem !important;
+    padding: 12px !important;
+  }
+
+  .leaderboard-title {
+    font-size: 14px !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #board th, #board td {
+    padding: 0.3rem 0.25rem !important;
+    font-size: 12px !important;
+  }
+
+  .progress-bar {
+    height: 6px !important;
+    margin: 2px 0 !important;
+  }
+
+  /* ACTION BUTTONS ROW - COMPACT */
+  .action-buttons-row {
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    justify-content: center;
+  }
+
+  .outline-button {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* HISTORY BUTTON - COMPACT */
+  .history-button {
+    padding: 10px 16px !important;
+    font-size: 12px !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* FOOTER - MINIMAL SPACING */
+  .site-footer {
+    margin-top: 1rem !important;
+    padding: 0.5rem 0 !important;
+    font-size: 10px !important;
+  }
+
+  /* INPUT FIELDS - COMPACT */
+  input {
+    padding: 0.5rem 0.6rem !important;
+    font-size: 14px !important;
+  }
+
+  /* REMOVE EXCESS MARGINS */
+  .card {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .join {
+    gap: 0.75rem !important;
+  }
+
+  .actions {
+    gap: 0.5rem !important;
+  }
+
+  button {
+    padding: 0.5rem 0.7rem !important;
+    font-size: 12px !important;
+  }
+
+  /* ENSURE NO OVERFLOW */
+  * {
+    box-sizing: border-box;
+  }
+
+  /* OPTIMIZE MODAL SPACING ON MOBILE */
+  .modal-content {
+    margin: 1rem !important;
+    padding: 0.75rem 1rem !important;
+    max-height: 90vh !important;
+  }
+
+  /* BANNER COMPACT */
+  .banner {
+    margin: 0.25rem 0 !important;
+    padding: 0.5rem 0.6rem !important;
+    font-size: 12px !important;
+  }
+}
+
 /* Focus picker layout inside the modal */
 .focus-grid {
   display: grid;
@@ -1060,11 +1332,54 @@ input[type="radio"] {
 /* Allow multi-word options to wrap inside the tile without escaping the grid */
 .focus-grid label { white-space: normal; }
 
-/* Keep footer visible and at the bottom even on short pages */
-html, body { height: 100%; }
-body { display: flex; flex-direction: column; }
-main.container { flex: 1 0 auto; }  /* grow main to fill space */
-.site-footer { flex-shrink: 0; }     /* keep footer from collapsing */
+/* MOBILE-FIRST VIEWPORT OPTIMIZATION */
+html, body {
+  height: 100vh;
+  overflow-x: hidden;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+}
+main.container {
+  flex: 1 0 auto;
+  max-height: calc(100vh - 60px); /* Reserve space for footer */
+  overflow-y: auto;
+}
+.site-footer {
+  flex-shrink: 0;
+  min-height: 60px;
+}
+
+/* MOBILE VIEWPORT HEIGHT CONSTRAINTS */
+@media (max-width: 768px) {
+  html, body {
+    height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height on supported browsers */
+    overflow: hidden;
+  }
+
+  main.container {
+    max-height: calc(100vh - 50px);
+    max-height: calc(100dvh - 50px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-footer {
+    min-height: 50px;
+  }
+
+  /* ENSURE PLAY SECTION FITS IN VIEWPORT */
+  #play {
+    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
+    overflow-y: auto;
+    padding-bottom: 1rem;
+  }
+}
 
 /* Footer styling */
 .site-footer {
@@ -1400,17 +1715,8 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
   margin-left: -20px;
 }
 
-/* Mobile balance display improvements */
-@media (max-width: 768px) {
-  .balance-display {
-    padding: 10px 15px;
-    min-width: 100px;
-  }
-
-  .balance-amount {
-    font-size: 28px;
-  }
-}
+/* Mobile balance display improvements - MOVED TO COMPREHENSIVE SECTION ABOVE */
+/* This block is now integrated into the comprehensive mobile optimizations */
 
 .balance-amount {
   font-size: 26px;
@@ -1824,46 +2130,102 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 }
 
 /* Mobile Responsive */
+/* MOBILE RESPONSIVE - ADDITIONAL OPTIMIZATIONS */
 @media (max-width: 768px) {
-  .main-content {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-  
-  .focus-areas {
-    order: 2;
-  }
-  
-  .balance-actions {
-    order: 1;
-  }
-
-  .wallet-image {
-    width: 250px;
-    height: 167px;
-  }
-  
-  .wallet-balance-row {
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-  }
-  
-  .balance-display {
-    margin-left: 0;
-  }
+  /* These styles are now integrated above in the comprehensive mobile section */
 }
 
+/* EXTRA SMALL MOBILE DEVICES - EVEN MORE COMPACT */
 @media (max-width: 480px) {
   .wallet-header,
   .main-content,
   .leaderboard {
     max-width: 100%;
   }
-  
+
+  .container {
+    margin: 0.25rem auto !important;
+    padding: 0 0.25rem !important;
+  }
+
+  .header {
+    padding: 0.1rem !important;
+  }
+
+  .header h1 {
+    font-size: 1.2rem !important;
+  }
+
+  .header-btn {
+    padding: 3px 6px !important;
+    font-size: 10px !important;
+  }
+
+  .wallet-image {
+    width: 140px !important;
+    height: 93px !important;
+  }
+
+  .balance-display {
+    padding: 6px 10px !important;
+  }
+
+  .balance-amount {
+    font-size: 18px !important;
+  }
+
   .action-button {
-    padding: 16px 20px;
-    font-size: 16px;
+    padding: 12px 16px !important;
+    font-size: 11px !important;
+  }
+
+  .leaderboard {
+    padding: 8px !important;
+  }
+
+  .leaderboard-title {
+    font-size: 12px !important;
+  }
+
+  #board th, #board td {
+    padding: 0.2rem 0.15rem !important;
+    font-size: 10px !important;
+  }
+
+  .mobile-focus-badges .chip {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-focus-badges .chip-emoji {
+    font-size: 10px;
+  }
+
+  .section-title {
+    font-size: 11px !important;
+  }
+
+  .focus-selection-prompt {
+    padding: 8px 12px !important;
+    min-height: 50px !important;
+  }
+
+  .focus-prompt-title {
+    font-size: 11px !important;
+  }
+
+  .focus-prompt-subtitle {
+    font-size: 9px !important;
+  }
+
+  .history-button {
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  .outline-button {
+    padding: 6px 10px !important;
+    font-size: 10px !important;
   }
 }
 

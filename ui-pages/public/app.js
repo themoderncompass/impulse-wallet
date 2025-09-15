@@ -448,6 +448,39 @@ function computeWeeklyStats(history) {
   byPlayer._byUserId = byUserId;
   return byPlayer;
 }
+// Focus area emoji mapping - only includes predefined focus areas from HTML
+const FOCUS_EMOJI_MAP = {
+  'Eat Healthy': '🥗',
+  'Exercise': '🏃',
+  'Scrolling': '📱',
+  'Snacking': '🍿',
+  'Spending': '💳',
+  'Booze': '🚫',
+  'Procrastination': '⏰',
+  'Gratitude': '🙏'
+};
+
+// Get emoji for focus area with intelligent matching for custom areas
+function getFocusEmoji(focusArea) {
+  const area = focusArea.trim();
+
+  // Direct match
+  if (FOCUS_EMOJI_MAP[area]) {
+    return FOCUS_EMOJI_MAP[area];
+  }
+
+  // Fuzzy matching for custom areas
+  const lowerArea = area.toLowerCase();
+  for (const [key, emoji] of Object.entries(FOCUS_EMOJI_MAP)) {
+    if (lowerArea.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerArea)) {
+      return emoji;
+    }
+  }
+
+  // Default for unmatched custom areas
+  return '⭐';
+}
+
 // --- state ---
 let roomCode = null;
 let displayName = "";
@@ -458,11 +491,20 @@ function paint(state) {
   // state: { ok, roomCode, balance, history:[{player,delta,label,created_at}] }
   const history = Array.isArray(state.history) ? state.history : [];
 
-  // Show room-specific buttons when in a room
+  // Only show room-specific buttons when successfully in a room (check if we have room state)
   const focusBtn = document.getElementById('focus-open');
   const roomBtn = document.getElementById('room-manage-open');
-  if (focusBtn) focusBtn.classList.remove('hidden');
-  if (roomBtn) roomBtn.classList.remove('hidden');
+
+  // Check if we're actually in a room by verifying we have valid room data
+  const inRoom = state.ok && roomCode && displayName && el.play && !el.play.classList.contains('hidden');
+
+  if (inRoom) {
+    if (focusBtn) focusBtn.classList.remove('hidden');
+    if (roomBtn) roomBtn.classList.remove('hidden');
+  } else {
+    if (focusBtn) focusBtn.classList.add('hidden');
+    if (roomBtn) roomBtn.classList.add('hidden');
+  }
 
   // Weekly stats per player (balance + longest streak)
   const stats = computeWeeklyStats(history);
@@ -944,16 +986,48 @@ async function focusApiPost(roomCode, userId, areas) {
   return r.json();
 }
 
-// Render chips in header
+// Render chips in header (both desktop and mobile badge format)
 function renderFocusChips(areas) {
   if (!focusEl.chips) return;
   focusEl.chips.innerHTML = "";
-  if (!areas || areas.length === 0) return;
+
+  // Also update mobile focus chips
+  const mobileChips = document.getElementById('focus-chips-mobile');
+  if (mobileChips) {
+    mobileChips.innerHTML = "";
+  }
+
+  if (!areas || areas.length === 0) {
+    if (mobileChips) mobileChips.style.display = 'none';
+    return;
+  }
+
+  if (mobileChips) mobileChips.style.display = 'flex';
+
   for (const a of areas) {
+    // Create emoji badge for mobile and desktop
+    const emoji = getFocusEmoji(a);
+
+    // Desktop chip (full text)
     const span = document.createElement("span");
     span.className = "chip";
-    span.textContent = a;
+    span.innerHTML = `
+      <span class="chip-emoji">${emoji}</span>
+      <span class="chip-label">${a}</span>
+    `;
     focusEl.chips.appendChild(span);
+
+    // Mobile chip (emoji only)
+    if (mobileChips) {
+      const mobileSpan = document.createElement("span");
+      mobileSpan.className = "chip";
+      mobileSpan.title = a; // Tooltip for accessibility
+      mobileSpan.innerHTML = `
+        <span class="chip-emoji">${emoji}</span>
+        <span class="chip-label">${a}</span>
+      `;
+      mobileChips.appendChild(mobileSpan);
+    }
   }
 }
 
