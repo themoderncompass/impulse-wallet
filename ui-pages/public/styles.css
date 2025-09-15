@@ -1094,62 +1094,6 @@ th, td {
     height: 240px !important;
   }
 
-  /* MOBILE FOCUS AREAS - POSITIONED TO RIGHT OF WALLET/BALANCE */
-  .mobile-focus-areas {
-    flex: 1;
-    order: 2;
-    margin-left: 0.5rem;
-    min-width: 140px;
-    background: rgba(0, 255, 0, 0.1); /* DEBUG: Temporary green background */
-    border: 1px solid green; /* DEBUG: Temporary border */
-  }
-
-  .mobile-focus-areas .section-title {
-    font-size: 14px !important;
-    margin-bottom: 0.5rem !important;
-    color: #4a5568;
-  }
-
-  .mobile-focus-areas .focus-selection-prompt {
-    background: #f8fafc;
-    border: 2px dashed #cbd5e0;
-    border-radius: 8px;
-    padding: 0.75rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-
-  .mobile-focus-areas .focus-prompt-title {
-    font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 0.25rem;
-    font-size: 13px;
-  }
-
-  .mobile-focus-areas .focus-prompt-subtitle {
-    color: #718096;
-    font-size: 11px;
-    line-height: 1.3;
-  }
-
-  .mobile-focus-areas .focus-chips .chip {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    padding: 0;
-    background: linear-gradient(145deg, #4a90e2, #2563eb);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    margin: 2px;
-    transition: all 0.2s ease;
-  }
-
-  .mobile-focus-areas .focus-chips .chip-label {
-    display: none; /* Hide text labels on mobile */
-  }
 
   /* MAIN CONTENT - MINIMAL GAPS */
   .main-content {
@@ -1158,10 +1102,6 @@ th, td {
     margin-bottom: 0.75rem !important;
   }
 
-  /* HIDE DESKTOP FOCUS AREAS ON MOBILE */
-  .focus-areas {
-    display: none !important;
-  }
 
   .section-title {
     font-size: 13px !important;
@@ -1286,9 +1226,19 @@ th, td {
   .modal-content {
     margin: 1rem !important;
     padding: 0.75rem 1rem !important;
-    max-height: 85vh !important;
-    overflow-y: auto !important;
+    max-height: 80vh !important;
+    overflow-y: scroll !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    position: relative !important;
+  }
+
+  /* Fix modal form scrolling specifically */
+  .modal #focus-form {
+    max-height: 60vh !important;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 20px !important;
   }
 
   /* BANNER COMPACT */
