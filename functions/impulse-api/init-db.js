@@ -63,10 +63,25 @@ export async function onRequestPost({ request, env }) {
         id TEXT PRIMARY KEY,
         email TEXT,
         display_name TEXT,
+        onboarding_completed INTEGER DEFAULT 0,
+        onboarding_completed_at TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `).run();
+    
+    // Add onboarding columns to existing users table
+    try {
+      await env.DB.prepare(`ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0`).run();
+    } catch (e) {
+      // Column already exists, ignore
+    }
+    
+    try {
+      await env.DB.prepare(`ALTER TABLE users ADD COLUMN onboarding_completed_at TEXT`).run();
+    } catch (e) {
+      // Column already exists, ignore
+    }
     
     await env.DB.prepare(`
       CREATE TABLE IF NOT EXISTS entries (

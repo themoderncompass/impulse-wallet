@@ -13,55 +13,41 @@
   <main class="container">
 
 <header class="header">
-  <h1>Impulse Wallet</h1>
-  
-  <!-- Header Actions -->
-  <div class="header-actions">
+  <div class="header-left">
+    <img src="/icons/icon-512.png" alt="Impulse Wallet" class="app-logo">
+    <h1>Impulse Wallet</h1>
+  </div>
+
+  <!-- Header actions: Room Settings + Weekly Focus + Instructions -->
+  <div class="header-right">
+<button id="room-manage-open"
+        class="instructions-btn hidden"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="room-manage-modal"
+        aria-label="Manage room settings">
+  Room Settings
+</button>
+
+<button id="focus-open"
+        class="instructions-btn hidden"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="focus-modal"
+        aria-label="Open weekly focus">
+  Weekly Focus
+</button>
+
     <button id="instructions-open"
-            class="header-btn instructions-btn"
+            class="instructions-btn"
             type="button"
             aria-haspopup="dialog"
             aria-controls="instructions-modal"
-            aria-label="View instructions">
+            aria-label="Open instructions">
       Instructions
-    </button>
-
-    <button id="focus-open"
-            class="header-btn focus-btn hidden"
-            type="button"
-            aria-haspopup="dialog"
-            aria-controls="focus-modal"
-            aria-label="Open weekly focus">
-      Weekly Focus
-    </button>
-
-    <button id="room-manage-open"
-            class="header-btn settings-btn hidden"
-            type="button"
-            aria-haspopup="dialog"
-            aria-controls="room-manage-modal"
-            aria-label="Manage room settings">
-      Room Settings
     </button>
   </div>
 </header>
-
-<!-- Onboarding Overlay -->
-<div class="onboarding-overlay" id="onboardingOverlay">
-  <div class="onboarding-card">
-    <h2 class="onboarding-title" id="onboardingTitle">Welcome to Impulse Wallet!</h2>
-    <p class="onboarding-text" id="onboardingText">
-      Your personal accountability partner! Track your actions and stay committed to the goals that matter to you.
-    </p>
-    <button class="onboarding-button" id="onboardingButton" onclick="nextOnboardingStep()">
-      Let's Start!
-    </button>
-    <button class="onboarding-skip" onclick="skipOnboarding()">Skip Tutorial</button>
-  </div>
-</div>
-
-<!-- Tooltip -->
-<div class="tooltip" id="tooltip"></div>
 
 <!-- Instructions modal -->
 <div id="instructions-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title" hidden>
@@ -72,7 +58,8 @@
 <section class="iw-instructions">
   <h2>Impulse Wallet</h2>
   <p class="lead">
-    Impulse Wallet helps you track positive actions and resist negative impulses. Build momentum by logging when you follow through and being honest when you don't.
+    Impulse Wallet is a simple game to build better habits and control impulses.
+    Good choices add to your wallet, and slips take from it. You want to be the first to reach $20 for the week and maintain it. Anyone that reaches $20 and stays there or above it is a winner. 
   </p>
 
   <h3>How it Works</h3>
@@ -86,8 +73,8 @@
 
   <h3>The Purpose</h3>
   <p>
-    This is about building self-trust through accountability. By tracking your follow-through,
-    you develop the discipline to keep the promises you make to yourself.
+    It is not about perfection. It is about awareness. By tracking deposits and withdrawals,
+    you build focus, discipline, and self control week by week.
   </p>
 </section>
 
@@ -162,81 +149,60 @@
       </div>
 
       <div id="play" class="hidden">
-        <!-- Wallet Header -->
-        <div class="wallet-header">
-          <div class="wallet-meta">
-            <span id="week"></span>
-          </div>
-          
-          <div class="wallet-container">
-            <div class="wallet-image" id="wallet-display"></div>
-          </div>
-
-          <div class="balance-display">
-            <div class="balance-amount" id="current-balance">$0</div>
-            <div class="balance-label">Current Balance</div>
+        <div class="meta">
+          <span id="week"></span>
+          <div class="button-group">
+            <button id="undo" class="secondary">Undo last (15 min)</button>
+            <button id="leave-room" class="secondary hidden">Leave Room</button>
           </div>
         </div>
 
-        <!-- Main Content Grid -->
-        <div class="main-content">
-          <!-- Focus Areas (Left) -->
-          <div class="focus-areas">
-            <div class="section-title">Focus Areas</div>
-            
-            <!-- Focus Area Selection Prompt (shown when no areas selected) -->
-            <div class="focus-selection-prompt" id="focus-selection-prompt" onclick="openFocusModal()">
-              <div class="focus-prompt-title">Choose Your Focus</div>
-              <div class="focus-prompt-subtitle">
-                Choose 3 focus areas for this week.<br>
-                Click here to get started!
-              </div>
-            </div>
-            
-            <!-- Selected Focus Areas (shown when areas are chosen) -->
-            <div id="focus-chips" class="focus-chips hidden" aria-label="Weekly focus areas"></div>
-          </div>
+        <!-- Weekly Focus chips appear here once set -->
+        <div id="focus-chips" class="focus-chips" aria-label="Weekly focus areas"></div>
 
-          <!-- Actions (Right) -->
-          <div class="balance-actions">
-            <div class="section-title">Actions</div>
-            <button id="plus" class="action-button deposit-btn">
-              Deposit +$1
-            </button>
-            <button id="minus" class="action-button withdraw-btn">
-              Withdrawal −$1
-            </button>
-            <input id="impulse" placeholder="Action note" />
+        <div class="controls">
+          <input id="impulse" placeholder="Optional impulse label" />
+          <button id="plus" class="good celebration-btn">Deposit +$1</button>
+          <button id="minus" class="bad celebration-btn">Withdrawal −$1</button>
+        </div>
+
+        <!-- Custom Note Field (Expandable) -->
+        <div class="note-field-container">
+          <button id="note-toggle" class="note-toggle" type="button" aria-expanded="false" aria-controls="note-field">
+            <span class="note-icon">📝</span>
+            <span class="note-toggle-text">Add note</span>
+            <span class="note-toggle-arrow">▼</span>
+          </button>
+          <div id="note-field" class="note-field hidden" aria-label="Additional note for your entry">
+            <textarea id="note-input" placeholder="Add context for this entry (optional)..." maxlength="200" rows="2"></textarea>
+            <div class="note-field-footer">
+              <span class="note-char-count">0/200</span>
+              <button id="note-clear" class="note-clear" type="button" aria-label="Clear note">Clear</button>
+            </div>
           </div>
         </div>
 
         <div id="banner" class="hidden banner"></div>
 
-        <!-- Leaderboard -->
-        <div class="leaderboard">
-          <div class="leaderboard-title">Leaderboard</div>
-          <table id="board">
-            <thead><tr><th>Player</th><th>Progress</th><th>Streak</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <h2>Leaderboard (this week)</h2>
+        <table id="board">
+          <thead><tr><th>Player</th><th>Balance</th><th>Longest streak</th></tr></thead>
+          <tbody></tbody>
+        </table>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons-row">
-          <button id="undo" class="outline-button grey-outline">Undo last (15 min)</button>
-          <button id="leave-room" class="outline-button red-outline hidden">Leave Room</button>
+        <!-- History now opens in a modal -->
+        <div class="history-section">
+          <h2>My history</h2>
+          <button id="history-open" class="secondary" type="button" aria-haspopup="dialog" aria-controls="history-modal">
+            View My History
+          </button>
         </div>
-
-        <!-- My History Button -->
-        <button id="history-open" class="history-button" type="button" aria-haspopup="dialog" aria-controls="history-modal">
-          My History
-        </button>
       </div>
     </section>
       <!-- Footer -->
   <footer class="site-footer">
     <nav class="legal-links" aria-label="Legal">
-      <a href="https://themoderncompass.io" target="_blank" rel="noopener noreferrer" class="link-like">
+      <a href="https://themoderncompass.io" target="_blank" rel="noopener noreferrer">
         Modern Compass
       </a>
       <span class="sep" aria-hidden="true">|</span>
@@ -469,7 +435,7 @@
           <div class="stat-label">Total Entries</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value" id="history-balance">—</div>
+          <div class="stat-value" id="current-balance">—</div>
           <div class="stat-label">Current Balance</div>
         </div>
         <div class="stat-card">

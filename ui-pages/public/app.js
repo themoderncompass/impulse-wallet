@@ -79,7 +79,24 @@ function clearSession() {
   try { localStorage.removeItem(IW_KEY); } catch {}
 }
 // --- leave room (client-only) ---
-function leaveRoom({ redirect = true } = {}) {
+async function leaveRoom({ redirect = true } = {}) {
+  try {
+    // Call backend to properly remove user from room
+    if (roomCode && currentUserId) {
+      await api("/room-leave", {
+        method: "POST",
+        body: JSON.stringify({
+          roomCode: roomCode,
+          userId: currentUserId,
+          confirmed: true
+        })
+      });
+    }
+  } catch (error) {
+    console.error("Error leaving room:", error);
+    // Continue with client cleanup even if backend fails
+  }
+  
   try { clearSession(); } catch {}
   roomCode = "";
   displayName = "";
@@ -205,9 +222,9 @@ const el = {
   banner: $("#banner"),
   board: $("#board tbody"),
   undo: $("#undo"),
-  months: $("#months"),
-  mine: $("#mine tbody"),
-  csv: $("#csv"),
+  months: $("#history-months"),
+  mine: $("#history-tbody"),
+  csv: $("#history-csv"),
   leaveBtn: document.getElementById("leave-room"),
   historyOpen: $("#history-open"),
   historyModal: $("#history-modal"),
@@ -215,13 +232,19 @@ const el = {
   historyTable: $("#history-tbody"),
   historyMonths: $("#history-months"),
   historyCsv: $("#history-csv"),
-  historyRefresh: $("#history-refresh")
+  historyRefresh: $("#history-refresh"),
+  // Note field elements removed
+  noteCharCount: $(".note-char-count")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize anonymous user system
   initUserSystem();
-  
+
+  // Initialize focus display to show selection prompt for new users
+  updateFocusDisplay([]);
+
+
   // Session restoration code (moved inside the function)
   const s = getSession(); // {roomCode, displayName} or null
   if (!s || !s.roomCode) return; // ✅ Now this return is inside the function
@@ -365,15 +388,45 @@ function isInCurrentWeek(ts) {
 // Compute per-player weekly balance and longest positive streak (deposits)
 // Assumes state.history is ascending by created_at (your API already returns ASC)
 function computeWeeklyStats(history) {
+  console.log('🗓️ Computing weekly stats for', history.length, 'entries');
   const byPlayer = new Map();
+  const byUserId = new Map(); // Track by userId as backup
+  let filteredCount = 0;
   for (const r of history) {
-    if (!r.created_at || !isInCurrentWeek(r.created_at)) continue;
+    if (!r.created_at || !isInCurrentWeek(r.created_at)) {
+      console.log('🗓️ Skipping entry (not current week):', r);
+      continue;
+    }
+    filteredCount++;
 
     const name = r.player || "—";
+    const userId = r.userId || r.user_id; // Handle both field names
+
+    console.log('🗓️ Processing entry - player:', name, 'userId:', userId, 'delta:', r.delta);
+
+    // Track by player name
     let s = byPlayer.get(name);
     if (!s) {
       s = { balance: 0, currentStreak: 0, longestStreak: 0 };
       byPlayer.set(name, s);
+    }
+
+    // Also track by userId as backup
+    if (userId) {
+      let userStats = byUserId.get(userId);
+      if (!userStats) {
+        userStats = { balance: 0, currentStreak: 0, longestStreak: 0 };
+        byUserId.set(userId, userStats);
+      }
+
+      const delta = r.delta || 0;
+      userStats.balance += delta;
+      if (delta > 0) {
+        userStats.currentStreak += 1;
+        if (userStats.currentStreak > userStats.longestStreak) userStats.longestStreak = userStats.currentStreak;
+      } else if (delta < 0) {
+        userStats.currentStreak = 0;
+      }
     }
 
     const delta = r.delta || 0;
@@ -386,16 +439,81 @@ function computeWeeklyStats(history) {
       s.currentStreak = 0; // any withdrawal breaks the streak
     }
   }
+  console.log('🗓️ Filtered', filteredCount, 'entries for current week');
+  console.log('🗓️ Stats map size:', byPlayer.size);
+  for (const [key, value] of byPlayer.entries()) {
+    console.log('🗓️ Player:', key, 'Balance:', value.balance);
+  }
+
+  // Store byUserId for fallback lookup
+  byPlayer._byUserId = byUserId;
   return byPlayer;
 }
+// Focus area emoji mapping - only includes predefined focus areas from HTML
+const FOCUS_EMOJI_MAP = {
+  'Eat Healthy': '🥗',
+  'Exercise': '🏃',
+  'Scrolling': '📱',
+  'Snacking': '🍿',
+  'Spending': '💳',
+  'Booze': '🚫',
+  'Procrastination': '⏰',
+  'Gratitude': '🙏'
+};
+
+// Get emoji for focus area with intelligent matching for custom areas
+function getFocusEmoji(focusArea) {
+  const area = focusArea.trim();
+
+  // Direct match
+  if (FOCUS_EMOJI_MAP[area]) {
+    return FOCUS_EMOJI_MAP[area];
+  }
+
+  // Fuzzy matching for custom areas
+  const lowerArea = area.toLowerCase();
+  for (const [key, emoji] of Object.entries(FOCUS_EMOJI_MAP)) {
+    if (lowerArea.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerArea)) {
+      return emoji;
+    }
+  }
+
+  // Default for unmatched custom areas
+  return '⭐';
+}
+
 // --- state ---
 let roomCode = null;
 let displayName = "";
 
 // --- render ---
 function paint(state) {
+  console.log('🎨 paint() called with state:', state);
   // state: { ok, roomCode, balance, history:[{player,delta,label,created_at}] }
   const history = Array.isArray(state.history) ? state.history : [];
+
+  // Only show room-specific buttons when successfully in a room (check if we have room state)
+  const focusBtn = document.getElementById('focus-open');
+  const roomBtn = document.getElementById('room-manage-open');
+
+  // Check if we're actually in a room by verifying we have valid room data
+  const inRoom = state.ok && roomCode && displayName && el.play && !el.play.classList.contains('hidden');
+
+  if (inRoom) {
+    if (focusBtn) focusBtn.classList.remove('hidden');
+    if (roomBtn) roomBtn.classList.remove('hidden');
+
+    // Show mobile focus areas when in room
+    const mobileAreas = document.getElementById('mobile-focus-areas');
+    if (mobileAreas) mobileAreas.style.display = 'block';
+  } else {
+    if (focusBtn) focusBtn.classList.add('hidden');
+    if (roomBtn) roomBtn.classList.add('hidden');
+
+    // Hide mobile focus areas when not in room
+    const mobileAreas = document.getElementById('mobile-focus-areas');
+    if (mobileAreas) mobileAreas.style.display = 'none';
+  }
 
   // Weekly stats per player (balance + longest streak)
   const stats = computeWeeklyStats(history);
@@ -405,18 +523,31 @@ function paint(state) {
   const rows = Array.from(stats.entries()).sort((a, b) => b[1].balance - a[1].balance);
   for (const [name, s] of rows) {
     const tr = document.createElement("tr");
+    // Calculate progress toward $20 goal (capped at 100%)
+    const progressPercent = Math.min(Math.max((s.balance / 20) * 100, 0), 100);
+    // Calculate fire emojis: 1 emoji for every 3 streaks (3=1🔥, 6=2🔥🔥, 9=3🔥🔥🔥, etc.)
+    const fireCount = Math.floor(s.currentStreak / 3);
+    const fireEmojis = '🔥'.repeat(fireCount);
+
     tr.innerHTML = `
       <td>${h(name)}</td>
-      <td>${s.balance}</td>
-      <td>${s.longestStreak || 0}</td>
+      <td>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${progressPercent}%"></div>
+        </div>
+      </td>
+      <td>${fireEmojis}</td>
     `;
     el.board.appendChild(tr);
   }
 
   // My history (latest first) — show ONLY my rows
-  el.mine.innerHTML = "";
-  const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
-  myHistory.slice().reverse().forEach(row => {
+  console.log('🔍 About to render history, el.mine:', el.mine);
+  try {
+    el.mine.innerHTML = "";
+    const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
+    console.log('🔍 Found', myHistory.length, 'history entries for', displayName);
+    myHistory.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
 const when = row.created_at
   ? parseTS(row.created_at).toLocaleString(undefined, {
@@ -427,29 +558,59 @@ const when = row.created_at
       minute: "2-digit"
     })
   : "";
-    tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
-    el.mine.appendChild(tr);
-  });
+      tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
+      el.mine.appendChild(tr);
+    });
+  } catch (historyError) {
+    console.warn('History rendering issue:', historyError.message || historyError);
+    if (el.mine) el.mine.innerHTML = '<tr><td colspan="4">History unavailable</td></tr>';
+  }
 
-  // Weekly milestone banners and celebrations based on this week's totals only
+  // Balance resolution (matching main branch logic)
   const me = stats.get(displayName);
-  if (me) {
+  console.log('🔢 Balance lookup - displayName:', displayName, 'me:', me);
+
+  const currentBalance = me ? me.balance : 0;
+
+  // Update balance display
+  const balanceEl = document.getElementById('current-balance');
+  if (balanceEl) {
+    balanceEl.textContent = `$${currentBalance}`;
+    console.log('🔢 Updated balance display to:', `$${currentBalance}`);
+  }
+
+  // Update history modal balance to match current balance
+  const historyBalanceEl = document.getElementById('history-balance');
+  if (historyBalanceEl) {
+    historyBalanceEl.textContent = `$${currentBalance}`;
+  }
+
+  // Update wallet image based on balance
+  updateWalletImage(currentBalance);
+
+
+  // Use the currentBalance already calculated above for milestone checks
+
+  // Only trigger milestone animations when we're actually in a room
+  const inRoomForMilestones = state.ok && roomCode && displayName;
+
+  if (inRoomForMilestones) {
     // Celebration for reaching +$20 (only trigger once per milestone achievement)
-    if (me.balance >= 20 && lastCelebrationBalance !== me.balance) {
+    if (currentBalance >= 20 && lastCelebrationBalance !== currentBalance) {
       show("You hit +$20 this week. Keep going.");
       showCelebration();
-      lastCelebrationBalance = me.balance;
+      lastCelebrationBalance = currentBalance;
     }
-    
+
     // Warning for hitting -$20 (only trigger once per milestone)
-    if (me.balance <= -20 && lastWarningBalance !== me.balance) {
+    if (currentBalance <= -20 && lastWarningBalance !== currentBalance) {
       show("You hit −$20 this week. Keep tracking.", true);
       showWarning();
-      lastWarningBalance = me.balance;
+      lastWarningBalance = currentBalance;
     }
-    
+
     // Reset milestone tracking if balance changes significantly
-    if (me.balance > -20 && me.balance < 20) {
+    if (currentBalance > -20 && currentBalance < 20) {
       lastCelebrationBalance = null;
       lastWarningBalance = null;
     }
@@ -461,7 +622,9 @@ const when = row.created_at
 async function refresh() {
   if (!roomCode) return;
   try {
+    console.log('🔄 refresh() called for room:', roomCode, 'displayName:', displayName);
     const data = await api(`/state?roomCode=${encodeURIComponent(roomCode)}`);
+    console.log('🔄 State API response:', data);
     paint(data);
     
     // Check if user is room creator to show/hide room management button
@@ -569,11 +732,16 @@ async function submit(amount) {
     playSfx(amount === 1 ? "good" : "bad");
 
     const impulse = (el.impulse.value || "").trim();
+    // Note field removed
+    
+    // Create entry with impulse label
+    const entryData = { delta: amount, label: impulse, userId: currentUserId };
+    
     await api("/state", {
       method: "POST",
       body: JSON.stringify({
         roomCode,
-        entry: { delta: amount, label: impulse, userId: currentUserId }
+        entry: entryData
       })
     });
 
@@ -645,6 +813,102 @@ el.leaveBtn?.addEventListener("click", () => {
   if (confirm("Are you sure you want to leave this room? You can rejoin anytime with the same room code.")) {
     leaveRoom();
   }
+});
+
+// ===== Note Field Functionality =====
+
+// Toggle note field visibility
+function toggleNoteField() {
+  if (!el.noteField || !el.noteToggle) return;
+  
+  const isHidden = el.noteField.classList.contains('hidden');
+  
+  if (isHidden) {
+    // Show note field
+    el.noteField.classList.remove('hidden');
+    el.noteField.classList.add('show');
+    el.noteToggle.setAttribute('aria-expanded', 'true');
+    el.noteToggle.querySelector('.note-toggle-text').textContent = 'Hide note';
+    
+    // Focus the textarea after animation
+    setTimeout(() => {
+      el.noteInput?.focus();
+    }, 100);
+  } else {
+    // Hide note field
+    el.noteField.classList.remove('show');
+    el.noteField.classList.add('hidden');
+    el.noteToggle.setAttribute('aria-expanded', 'false');
+    el.noteToggle.querySelector('.note-toggle-text').textContent = 'Add note';
+  }
+}
+
+// Update character count display
+function updateCharCount() {
+  if (!el.noteInput || !el.noteCharCount) return;
+  
+  const currentLength = el.noteInput.value.length;
+  const maxLength = parseInt(el.noteInput.getAttribute('maxlength')) || 200;
+  
+  el.noteCharCount.textContent = `${currentLength}/${maxLength}`;
+  
+  // Update styling based on character count
+  el.noteCharCount.classList.remove('warning', 'error');
+  if (currentLength > maxLength * 0.9) {
+    el.noteCharCount.classList.add('error');
+  } else if (currentLength > maxLength * 0.75) {
+    el.noteCharCount.classList.add('warning');
+  }
+}
+
+// Clear note field
+function clearNoteField() {
+  if (!el.noteInput) return;
+  
+  el.noteInput.value = '';
+  updateCharCount();
+  el.noteInput.focus();
+}
+
+// Note field event listeners
+// Note toggle and clear buttons removed
+el.noteInput?.addEventListener('input', updateCharCount);
+
+// Handle keyboard shortcuts
+el.noteInput?.addEventListener('keydown', (e) => {
+  // Escape key to close note field
+  if (e.key === 'Escape') {
+    toggleNoteField();
+    e.preventDefault();
+  }
+  
+  // Ctrl/Cmd + Enter to submit (focus main action)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    // Focus the plus button as default action
+    el.plus?.focus();
+  }
+});
+
+// Auto-collapse note field when clicking outside
+document.addEventListener('click', (e) => {
+  if (!el.noteField || !el.noteToggle) return;
+  
+  const noteContainer = document.querySelector('.note-field-container');
+  const isClickInsideNote = noteContainer && noteContainer.contains(e.target);
+  const isNoteVisible = !el.noteField.classList.contains('hidden');
+  
+  if (isNoteVisible && !isClickInsideNote) {
+    // Only auto-collapse if the field is empty
+    if (!el.noteInput?.value.trim()) {
+      toggleNoteField();
+    }
+  }
+});
+
+// Initialize character count on page load
+document.addEventListener('DOMContentLoaded', () => {
+  updateCharCount();
 });
 
 
@@ -731,16 +995,48 @@ async function focusApiPost(roomCode, userId, areas) {
   return r.json();
 }
 
-// Render chips in header
+// Render chips in header (both desktop and mobile badge format)
 function renderFocusChips(areas) {
   if (!focusEl.chips) return;
   focusEl.chips.innerHTML = "";
-  if (!areas || areas.length === 0) return;
+
+  // Also update mobile focus chips
+  const mobileChips = document.getElementById('focus-chips-mobile');
+  if (mobileChips) {
+    mobileChips.innerHTML = "";
+  }
+
+  if (!areas || areas.length === 0) {
+    if (mobileChips) mobileChips.style.display = 'none';
+    return;
+  }
+
+  if (mobileChips) mobileChips.style.display = 'flex';
+
   for (const a of areas) {
+    // Create emoji badge for mobile and desktop
+    const emoji = getFocusEmoji(a);
+
+    // Desktop chip (full text)
     const span = document.createElement("span");
     span.className = "chip";
-    span.textContent = a;
+    span.innerHTML = `
+      <span class="chip-emoji">${emoji}</span>
+      <span class="chip-label">${a}</span>
+    `;
     focusEl.chips.appendChild(span);
+
+    // Mobile chip (emoji only)
+    if (mobileChips) {
+      const mobileSpan = document.createElement("span");
+      mobileSpan.className = "chip";
+      mobileSpan.title = a; // Tooltip for accessibility
+      mobileSpan.innerHTML = `
+        <span class="chip-emoji">${emoji}</span>
+        <span class="chip-label">${a}</span>
+      `;
+      mobileChips.appendChild(mobileSpan);
+    }
   }
 }
 
@@ -803,6 +1099,7 @@ function setFocusLockedUI(locked, areas) {
   }
   
   renderFocusChips(areas);
+  updateFocusDisplay(areas);
 }
 
 // Helpers for selection state and limit
@@ -843,6 +1140,8 @@ async function initWeeklyFocusUI() {
     if (focusEl.error) {
       focusEl.error.textContent = "Could not load focus areas. Please try again.";
     }
+    // Ensure UI shows selection prompt when there's an error loading areas
+    updateFocusDisplay([]);
   }
 }
 
@@ -1070,6 +1369,8 @@ function initHistoryModal() {
     if (totalEl) totalEl.textContent = totalEntries;
     if (balanceEl) balanceEl.textContent = `$${currentBalance}`;
     if (streakEl) streakEl.textContent = bestStreak;
+    
+    // Note: history modal balance is now updated in paint() function to use same logic
   }
   
   function renderHistoryTable() {
@@ -1447,34 +1748,190 @@ function createRipple(button, event) {
   }, 600);
 }
 
-// Show milestone celebration
+// Show milestone celebration with falling dollars and confetti from prototype
 function showCelebration() {
-  const overlay = document.getElementById('celebration-overlay');
-  if (overlay) {
-    overlay.classList.remove('hidden');
-    
-    // Auto-close after 5 seconds if user doesn't interact
+  console.log('🎉 TRIGGERING CELEBRATION ANIMATION!');
+  
+  // Create celebration container
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100vw';
+  container.style.height = '100vh';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '9999';
+  container.style.overflow = 'hidden';
+  document.body.appendChild(container);
+  
+  // Success text
+  const successText = document.createElement('div');
+  successText.textContent = 'Goal Achieved! 🎉';
+  successText.style.position = 'fixed';
+  successText.style.top = '40%';
+  successText.style.left = '50%';
+  successText.style.transform = 'translate(-50%, -50%)';
+  successText.style.fontSize = '3rem';
+  successText.style.fontWeight = 'bold';
+  successText.style.color = '#68d391';
+  successText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+  successText.style.zIndex = '10000';
+  successText.style.pointerEvents = 'none';
+  successText.style.animation = 'successTextPop 2.5s ease-out';
+  container.appendChild(successText);
+  
+  // Create falling dollars (15 dollar bills)
+  for (let i = 0; i < 15; i++) {
     setTimeout(() => {
-      if (!overlay.classList.contains('hidden')) {
-        closeCelebration();
-      }
-    }, 5000);
+      const dollar = document.createElement('div');
+      dollar.className = 'falling-dollar';
+      dollar.style.position = 'absolute';
+      dollar.style.width = '40px';
+      dollar.style.height = '65px';
+      dollar.style.backgroundImage = 'url("wallet-assets/Dollar.png")';
+      dollar.style.backgroundSize = 'contain';
+      dollar.style.backgroundRepeat = 'no-repeat';
+      dollar.style.backgroundPosition = 'center';
+      dollar.style.left = Math.random() * 100 + 'vw';
+      dollar.style.top = '-100px';
+      dollar.style.animationDelay = Math.random() * 0.5 + 's';
+      dollar.style.animation = `dollarFall ${2 + Math.random()}s linear forwards`;
+      dollar.style.pointerEvents = 'none';
+      container.appendChild(dollar);
+    }, i * 100);
   }
+  
+  // Create confetti (30 pieces)
+  const colors = ['#ff6b35', '#f7931e', '#ffcc02', '#68d391', '#4ecdc4', '#a78bfa'];
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.position = 'absolute';
+      confetti.style.width = '8px';
+      confetti.style.height = '8px';
+      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.top = '-10px';
+      confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.3 + 's';
+      confetti.style.animation = `confettiFall ${1.5 + Math.random() * 0.5}s linear forwards`;
+      confetti.style.pointerEvents = 'none';
+      container.appendChild(confetti);
+    }, i * 50);
+  }
+  
+  // Clean up after animation
+  setTimeout(() => {
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+  }, 4000);
 }
 
-// Show milestone warning
+// Show milestone warning with recharge animation from prototype
 function showWarning() {
-  const overlay = document.getElementById('milestone-warning');
-  if (overlay) {
-    overlay.classList.remove('hidden');
-    
-    // Auto-close after 5 seconds if user doesn't interact
+  console.log('💥 TRIGGERING ENHANCED FAILURE ANIMATION!');
+
+  // Create animation container
+  const container = document.createElement('div');
+  container.className = 'animation-container';
+  container.style.position = 'fixed';
+  container.style.top = '0';
+  container.style.left = '0';
+  container.style.width = '100vw';
+  container.style.height = '100vh';
+  container.style.pointerEvents = 'none';
+  container.style.zIndex = '9999';
+  document.body.appendChild(container);
+
+  // Create screen shake effect
+  document.body.style.animation = 'screenShake 0.5s ease-in-out';
+  setTimeout(() => {
+    document.body.style.animation = '';
+  }, 500);
+
+  // Create falling broken heart emojis
+  for (let i = 0; i < 12; i++) {
     setTimeout(() => {
-      if (!overlay.classList.contains('hidden')) {
-        closeWarning();
-      }
-    }, 5000);
+      const heart = document.createElement('div');
+      heart.style.position = 'absolute';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.top = '-50px';
+      heart.style.fontSize = '40px';
+      heart.style.zIndex = '1001';
+      heart.style.animation = `fallHearts ${3 + Math.random()}s linear forwards`;
+      heart.textContent = '💔';
+      container.appendChild(heart);
+    }, i * 100);
   }
+
+  // Create central dramatic emoji with pulse
+  const centralEmoji = document.createElement('div');
+  centralEmoji.style.position = 'fixed';
+  centralEmoji.style.top = '35%';
+  centralEmoji.style.left = '50%';
+  centralEmoji.style.transform = 'translate(-50%, -50%)';
+  centralEmoji.style.fontSize = '100px';
+  centralEmoji.style.zIndex = '1002';
+  centralEmoji.style.animation = 'dramaPulse 2s ease-out';
+  centralEmoji.textContent = '😰';
+  container.appendChild(centralEmoji);
+
+  // Create floating sad emojis around the screen
+  const sadEmojis = ['😔', '😞', '😢', '😭', '😩'];
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      const emoji = document.createElement('div');
+      emoji.style.position = 'fixed';
+      emoji.style.left = Math.random() * 80 + 10 + '%';
+      emoji.style.top = Math.random() * 60 + 20 + '%';
+      emoji.style.fontSize = '30px';
+      emoji.style.zIndex = '1001';
+      emoji.style.animation = 'floatSad 2s ease-in-out infinite';
+      emoji.textContent = sadEmojis[Math.floor(Math.random() * sadEmojis.length)];
+      container.appendChild(emoji);
+    }, i * 200);
+  }
+
+  // Create motivational comeback text
+  const motivationalText = document.createElement('div');
+  motivationalText.innerHTML = 'Reset & Rise! 💪<br><small>Every setback is a setup for a comeback</small>';
+  motivationalText.style.position = 'fixed';
+  motivationalText.style.top = '65%';
+  motivationalText.style.left = '50%';
+  motivationalText.style.transform = 'translate(-50%, -50%)';
+  motivationalText.style.color = '#dc2626';
+  motivationalText.style.fontSize = '28px';
+  motivationalText.style.fontWeight = '700';
+  motivationalText.style.textAlign = 'center';
+  motivationalText.style.pointerEvents = 'none';
+  motivationalText.style.zIndex = '1001';
+  motivationalText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+  motivationalText.style.animation = 'comebackGlow 2.5s ease-out';
+  motivationalText.style.opacity = '0';
+  container.appendChild(motivationalText);
+
+  // Delayed text appearance with dramatic entrance
+  setTimeout(() => {
+    motivationalText.style.opacity = '1';
+    motivationalText.style.animation = 'comebackGlow 2s ease-out';
+  }, 1000);
+
+  // Add wallet dramatic drain effect
+  const walletImage = document.getElementById('wallet-display');
+  if (walletImage) {
+    walletImage.style.animation = 'walletDrain 1.5s ease-out';
+  }
+
+  // Clean up after animation
+  setTimeout(() => {
+    if (container && container.parentNode) {
+      container.parentNode.removeChild(container);
+    }
+    if (walletImage) {
+      walletImage.style.animation = '';
+    }
+  }, 4000);
 }
 
 // Close celebration overlay
@@ -1521,3 +1978,363 @@ function enhanceButtonClicks() {
 document.addEventListener('DOMContentLoaded', function() {
   enhanceButtonClicks();
 });
+
+// Test keyboard shortcuts from prototype (for testing animations)
+
+// ===== WALLET IMAGE SYSTEM =====
+let lastWalletBalance = null; // Track previous balance to avoid unnecessary animations
+
+function updateWalletImage(balance) {
+  const walletImage = document.getElementById('wallet-display');
+  if (!walletImage) {
+    console.log('Wallet image element not found');
+    return;
+  }
+
+  // Only animate if balance actually changed
+  const balanceChanged = lastWalletBalance !== balance;
+
+  let imageName = 'Wallet empty.png';
+
+  // Use all 5 wallet states based on dollar amount
+  if (balance >= 15) imageName = 'Wallet 4 bills.png';
+  else if (balance >= 10) imageName = 'Wallet 3 bills.png';
+  else if (balance >= 5) imageName = 'Wallet 2 bills.png';
+  else if (balance >= 1) imageName = 'Wallet 1 bill.png';
+  else imageName = 'Wallet empty.png';
+
+  console.log('Updating wallet image:', imageName, 'for balance:', balance);
+
+  // Only add animation if balance changed
+  if (balanceChanged) {
+    walletImage.classList.add('updating');
+    // Remove animation class after animation completes
+    setTimeout(() => {
+      walletImage.classList.remove('updating');
+    }, 500);
+  }
+
+  // Update image - fixed path
+  walletImage.style.backgroundImage = `url('wallet-assets/${imageName}')`;
+
+  // Ensure element has proper size and background settings
+  walletImage.style.width = '300px';
+  walletImage.style.height = '200px';
+  walletImage.style.backgroundSize = 'contain';
+  walletImage.style.backgroundRepeat = 'no-repeat';
+  walletImage.style.backgroundPosition = 'center';
+
+  // Update tracked balance
+  lastWalletBalance = balance;
+}
+
+// Focus modal functionality
+function openFocusModal() {
+  const focusModal = document.getElementById('focus-modal');
+  if (focusModal) {
+    focusModal.hidden = false;
+  }
+}
+
+// Update focus area display (both desktop and mobile)
+function updateFocusDisplay(focusAreas) {
+  // There's only one focus prompt element used for both desktop and mobile
+  const focusPrompt = document.getElementById('focus-selection-prompt');
+  const focusChips = document.getElementById('focus-chips');
+
+  if (focusAreas && focusAreas.length > 0) {
+    // Hide prompt, show focus chips
+    if (focusPrompt) focusPrompt.style.display = 'none';
+    if (focusChips) {
+      focusChips.classList.remove('hidden');
+      focusChips.style.display = 'block';
+    }
+  } else {
+    // Show prompt, hide focus chips
+    if (focusPrompt) focusPrompt.style.display = 'flex';
+    if (focusChips) {
+      focusChips.classList.add('hidden');
+      focusChips.style.display = 'none';
+    }
+  }
+}
+
+// Settings menu functionality
+function toggleSettings() {
+  console.log('🍔 toggleSettings called!');
+  const toggle = document.querySelector('.settings-toggle');
+  const dropdown = document.getElementById('settingsDropdown');
+  
+  console.log('🔍 Elements found:', { toggle: !!toggle, dropdown: !!dropdown });
+  
+  if (toggle && dropdown) {
+    toggle.classList.toggle('active');
+    dropdown.classList.toggle('active');
+    console.log('✅ Classes toggled - active:', toggle.classList.contains('active'));
+  } else {
+    console.error('❌ Missing elements:', { toggle, dropdown });
+  }
+}
+
+// Make toggleSettings globally available for onclick handlers
+window.toggleSettings = toggleSettings;
+
+// Add backup event listener for settings menu
+document.addEventListener('DOMContentLoaded', function() {
+  const settingsToggle = document.querySelector('.settings-toggle');
+  if (settingsToggle) {
+    console.log('🎯 Adding backup click listener to settings toggle');
+    settingsToggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('🖱️ Settings toggle clicked via event listener');
+      toggleSettings();
+    });
+  } else {
+    console.warn('⚠️ Settings toggle not found in DOM');
+  }
+});
+
+
+// ===== ONBOARDING SYSTEM =====
+
+let currentOnboardingStep = 0;
+let onboardingCompleted = false;
+
+// Onboarding steps from prototype
+const onboardingSteps = [
+  {
+    title: "Welcome to Impulse Wallet!",
+    text: "Your personal accountability partner! Track your actions and stay committed to the goals that matter to you.",
+    button: "Let's Start!",
+    highlight: null,
+    tooltip: null
+  },
+  {
+    title: "Your Progress Tracker",
+    text: "This wallet represents your commitment! Each dollar shows you followed through on your promises to yourself. Consistency builds character!",
+    button: "Got it!",
+    highlight: "#wallet-display",
+    tooltip: { element: "#wallet-display", text: "Your wallet grows with follow-through!" }
+  },
+  {
+    title: "Stay Accountable",
+    text: "Your balance reflects your follow-through. Each +$1 means you kept a commitment. Your $20 weekly goal keeps you moving forward!",
+    button: "Makes sense!",
+    highlight: "#current-balance",
+    tooltip: { element: "#current-balance", text: "Your accountability tracker" }
+  },
+  {
+    title: "Log Your Actions",
+    text: "Be honest with yourself! +$1 when you follow through, -$1 when you fall short. Accountability means owning both wins and setbacks!",
+    button: "Let me try!",
+    highlight: ".balance-actions",
+    tooltip: { element: ".action-button", text: "Click to log your commitments!" }
+  },
+  {
+    title: "Your Commitments",
+    text: "These are your weekly promises to yourself. Three focus areas keep you from spreading too thin. Choose what matters most!",
+    button: "I understand!",
+    highlight: ".focus-areas",
+    tooltip: { element: ".focus-chip", text: "Your weekly commitments" }
+  },
+  {
+    title: "Compete & Connect",
+    text: "See how you're doing compared to others in your room! The progress bars show everyone's journey toward the weekly $20 goal.",
+    button: "Exciting!",
+    highlight: ".leaderboard",
+    tooltip: { element: ".leaderboard", text: "Friendly competition motivates growth!" }
+  },
+  {
+    title: "Ready to Build Habits!",
+    text: "You're all set! Start by making a deposit for a positive action you've completed. Watch your wallet grow and celebrate your progress!",
+    button: "Start Building!",
+    highlight: "#plus",
+    tooltip: null
+  }
+];
+
+// Initialize onboarding
+function initOnboarding() {
+  // Check if user has completed onboarding
+  const completed = localStorage.getItem("onboardingCompleted");
+  if (completed === "true") {
+    onboardingCompleted = true;
+    return;
+  }
+
+  // TEMPORARY: Skip onboarding for development
+  console.log("🚧 Skipping onboarding for development");
+  localStorage.setItem("onboardingCompleted", "true");
+  onboardingCompleted = true;
+  return;
+
+  console.log("🎓 Starting onboarding...");
+  onboardingCompleted = false;
+  currentOnboardingStep = 0;
+
+  // Start onboarding after brief delay
+  setTimeout(() => {
+    hideNonEssentialElements();
+    showOnboardingOverlay();
+  }, 1000);
+}
+
+function showOnboardingOverlay() {
+  console.log("📖 Showing onboarding step:", currentOnboardingStep);
+  const overlay = document.getElementById("onboardingOverlay");
+  const step = onboardingSteps[currentOnboardingStep];
+  
+  if (!overlay || !step) {
+    console.error("❌ Onboarding overlay or step not found");
+    return;
+  }
+  
+  // Update content
+  document.getElementById("onboardingTitle").textContent = step.title;
+  document.getElementById("onboardingText").textContent = step.text;
+  document.getElementById("onboardingButton").textContent = step.button;
+  
+  // Show overlay
+  overlay.classList.add("active");
+  
+  // Add highlights and tooltips after animation
+  if (step.highlight) {
+    setTimeout(() => {
+      highlightElement(step.highlight);
+      if (step.tooltip) {
+        showTooltip(step.tooltip.element, step.tooltip.text);
+      }
+    }, 300);
+  }
+}
+
+function nextOnboardingStep() {
+  console.log("▶️ Next onboarding step");
+  clearHighlights();
+  hideTooltip();
+  
+  if (currentOnboardingStep < onboardingSteps.length - 1) {
+    currentOnboardingStep++;
+    
+    // Progressive disclosure
+    if (currentOnboardingStep === 4) {
+      // Show focus areas
+      document.querySelectorAll(".focus-chip, .focus-selection-prompt").forEach(element => {
+        element.classList.remove("onboarding-hidden");
+      });
+    }
+    
+    if (currentOnboardingStep === 5) {
+      // Show leaderboard
+      const leaderboard = document.querySelector(".leaderboard");
+      if (leaderboard) leaderboard.classList.remove("onboarding-hidden");
+      const historyBtn = document.querySelector(".history-button");
+      if (historyBtn) historyBtn.classList.remove("onboarding-hidden");
+    }
+    
+    setTimeout(() => showOnboardingOverlay(), 100);
+  } else {
+    completeOnboarding();
+  }
+}
+
+function skipOnboarding() {
+  if (confirm("Skip the tutorial? You can always access help from the settings menu.")) {
+    completeOnboarding();
+  }
+}
+
+function completeOnboarding() {
+  console.log("✅ Completing onboarding");
+  const overlay = document.getElementById("onboardingOverlay");
+  overlay.classList.remove("active");
+  clearHighlights();
+  hideTooltip();
+  showAllElements();
+  
+  // Mark as completed
+  localStorage.setItem("onboardingCompleted", "true");
+  onboardingCompleted = true;
+  
+  // Show success message
+  setTimeout(() => {
+    showTooltip("#wallet-display", "Great! Start tracking your commitments now!");
+    setTimeout(hideTooltip, 3000);
+  }, 500);
+}
+
+function hideNonEssentialElements() {
+  // Hide elements that aren't immediately needed during onboarding
+  const elementsToHide = [
+    ".leaderboard",
+    ".history-button",
+    ".focus-chips",
+    ".focus-selection-prompt"
+  ];
+  
+  elementsToHide.forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.classList.add("onboarding-hidden");
+    }
+  });
+}
+
+function showAllElements() {
+  document.querySelectorAll(".onboarding-hidden").forEach(element => {
+    element.classList.remove("onboarding-hidden");
+  });
+}
+
+function highlightElement(selector) {
+  const element = document.querySelector(selector);
+  if (element) {
+    element.classList.add("onboarding-highlight");
+  } else {
+    console.warn("⚠️ Highlight element not found:", selector);
+  }
+}
+
+function clearHighlights() {
+  document.querySelectorAll(".onboarding-highlight").forEach(element => {
+    element.classList.remove("onboarding-highlight");
+  });
+}
+
+function showTooltip(elementSelector, text) {
+  const tooltip = document.getElementById("tooltip");
+  const targetElement = document.querySelector(elementSelector);
+  
+  if (!targetElement || !tooltip) {
+    console.warn("⚠️ Tooltip target or tooltip element not found:", elementSelector);
+    return;
+  }
+  
+  const rect = targetElement.getBoundingClientRect();
+  tooltip.textContent = text;
+  tooltip.style.left = rect.left + (rect.width / 2) - (tooltip.offsetWidth / 2) + "px";
+  tooltip.style.top = rect.top - tooltip.offsetHeight - 10 + "px";
+  tooltip.classList.add("active");
+}
+
+function hideTooltip() {
+  const tooltip = document.getElementById("tooltip");
+  if (tooltip) {
+    tooltip.classList.remove("active");
+  }
+}
+
+// Make onboarding functions globally available for onclick handlers
+window.nextOnboardingStep = nextOnboardingStep;
+window.skipOnboarding = skipOnboarding;
+
+// Initialize onboarding when DOM is ready
+document.addEventListener("DOMContentLoaded", function() {
+  // Initialize onboarding system
+  initOnboarding();
+});
+
+
+// Add O key to reset onboarding for testing
+
+
