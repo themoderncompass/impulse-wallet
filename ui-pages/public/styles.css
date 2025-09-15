@@ -99,6 +99,7 @@ body {
 .header {
   position: relative;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin-bottom: 1.5rem;
@@ -106,6 +107,7 @@ body {
   max-width: 400px;
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
 }
 
 .header h1 {
@@ -976,7 +978,7 @@ th, td {
   background: linear-gradient(145deg, #4a90e2, #2563eb);
   border: none;
   border-radius: 15px;
-  padding: 24px;
+  padding: 24px 20px;
   color: white;
   font-weight: 600;
   cursor: default;
@@ -1326,7 +1328,36 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+.header-btn {
+  appearance: none;
+  background: linear-gradient(145deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.header-btn.focus-btn {
+  background: linear-gradient(145deg, #f093fb, #f5576c);
+}
+
+.header-btn.settings-btn {
+  background: linear-gradient(145deg, #4facfe, #00f2fe);
 }
 
 .wallet-balance-row {

@@ -15,52 +15,35 @@
 <header class="header">
   <h1>Impulse Wallet</h1>
   
-  <!-- Settings Menu -->
-  <div class="settings-menu">
-    <button class="settings-toggle">
-      <div class="hamburger">
-        <div class="hamburger-line"></div>
-        <div class="hamburger-line"></div>
-        <div class="hamburger-line"></div>
-      </div>
+  <!-- Header Actions -->
+  <div class="header-actions">
+    <button id="instructions-open"
+            class="header-btn instructions-btn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="instructions-modal"
+            aria-label="View instructions">
+      📋 Instructions
     </button>
-    <div class="settings-dropdown" id="settingsDropdown">
-      <div class="settings-item" onclick="document.getElementById('instructions-open').click();">Instructions</div>
-      <div class="settings-item" onclick="document.getElementById('focus-open').click();">Weekly Focus</div>
-      <div class="settings-item" onclick="document.getElementById('room-manage-open').click();">Room Settings</div>
-    </div>
+
+    <button id="focus-open"
+            class="header-btn focus-btn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="focus-modal"
+            aria-label="Open weekly focus">
+      🎯 Weekly Focus
+    </button>
+
+    <button id="room-manage-open"
+            class="header-btn settings-btn"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="room-manage-modal"
+            aria-label="Manage room settings">
+      ⚙️ Room Settings
+    </button>
   </div>
-  
-  <!-- Hidden original buttons for modal functionality -->
-  <button id="room-manage-open"
-          class="instructions-btn hidden"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="room-manage-modal"
-          aria-label="Manage room settings"
-          style="display: none;">
-    Room Settings
-  </button>
-
-  <button id="focus-open"
-          class="instructions-btn hidden"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="focus-modal"
-          aria-label="Open weekly focus"
-          style="display: none;">
-    Weekly Focus
-  </button>
-
-  <button id="instructions-open"
-          class="instructions-btn"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="instructions-modal"
-          aria-label="Open instructions"
-          style="display: none;">
-    Instructions
-  </button>
 </header>
 
 <!-- Onboarding Overlay -->
