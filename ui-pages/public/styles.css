@@ -964,12 +964,13 @@ th, td {
 .focus-chips {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   margin: .75rem 0;
+  padding: 0 4px;
 }
 
 .focus-chips .chip {
-  background: linear-gradient(145deg, #ff9a56, #ff6b35);
+  background: linear-gradient(145deg, #7bb3f7, #4a90e2);
   border: none;
   border-radius: 15px;
   padding: 12px;
@@ -1557,6 +1558,37 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
   font-weight: 600;
   text-align: center;
   margin-top: 2px;
+}
+
+/* Action Buttons Row */
+.action-buttons-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.gradient-button {
+  background: linear-gradient(145deg, #a8d8ea, #6cb4d8);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.gradient-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(145deg, #96cde8, #5a9bd1);
+}
+
+.gradient-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* History Button */

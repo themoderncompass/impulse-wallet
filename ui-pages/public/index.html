@@ -183,10 +183,6 @@
         <div class="wallet-header">
           <div class="wallet-meta">
             <span id="week"></span>
-            <div class="header-actions">
-              <button id="undo" class="secondary">Undo last (15 min)</button>
-              <button id="leave-room" class="secondary hidden">Leave Room</button>
-            </div>
           </div>
           
           <div class="wallet-balance-row">
@@ -222,20 +218,13 @@
           <!-- Actions (Right) -->
           <div class="balance-actions">
             <div class="section-title">Actions</div>
-            <input id="impulse" placeholder="Optional impulse label" />
             <button id="plus" class="action-button deposit-btn">
               Deposit +$1
             </button>
             <button id="minus" class="action-button withdraw-btn">
               Withdrawal −$1
             </button>
-            
-            <!-- Custom Note Field -->
-            <div class="note-section">
-              <div id="note-field">
-                <input type="text" id="note-input" class="note-input" placeholder="Add note (optional)" maxlength="100">
-              </div>
-            </div>
+            <input id="impulse" placeholder="Optional impulse label" />
           </div>
         </div>
 
@@ -248,6 +237,12 @@
             <thead><tr><th>Player</th><th>Balance</th><th>Longest streak</th></tr></thead>
             <tbody></tbody>
           </table>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons-row">
+          <button id="undo" class="gradient-button">Undo last (15 min)</button>
+          <button id="leave-room" class="gradient-button hidden">Leave Room</button>
         </div>
 
         <!-- My History Button -->

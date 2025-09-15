@@ -233,9 +233,7 @@ const el = {
   historyMonths: $("#history-months"),
   historyCsv: $("#history-csv"),
   historyRefresh: $("#history-refresh"),
-  // Note field elements
-  noteField: $("#note-field"),
-  noteInput: $("#note-input"),
+  // Note field elements removed
   noteCharCount: $(".note-char-count")
 };
 // ===== Auto-restore on load (stay in your room after refresh) =====
@@ -418,6 +416,7 @@ let displayName = "";
 
 // --- render ---
 function paint(state) {
+  console.log('🎨 paint() called with state:', state);
   // state: { ok, roomCode, balance, history:[{player,delta,label,created_at}] }
   const history = Array.isArray(state.history) ? state.history : [];
 
@@ -483,13 +482,17 @@ const when = row.created_at
     userBalance = userStats.balance;
   }
   
-  console.log('Resolved balance:', userBalance);
-  
+  console.log('🔢 Balance Debug - Resolved balance:', userBalance);
+  console.log('🔢 Balance Debug - userStats:', userStats);
+  console.log('🔢 Balance Debug - displayName:', displayName);
+
   // Update balance display
-  const balanceEl = document.getElementById('current-balance');  
+  const balanceEl = document.getElementById('current-balance');
   if (balanceEl) {
     balanceEl.textContent = `$${userBalance}`;
-    console.log('Updated balance display to:', `$${userBalance}`);
+    console.log('🔢 Updated balance display to:', `$${userBalance}`);
+  } else {
+    console.error('🔢 Balance element not found!');
   }
   
   // Update wallet image based on balance
@@ -521,9 +524,9 @@ const when = row.created_at
 async function refresh() {
   if (!roomCode) return;
   try {
-    console.log('Refreshing state for room:', roomCode, 'displayName:', displayName);
+    console.log('🔄 refresh() called for room:', roomCode, 'displayName:', displayName);
     const data = await api(`/state?roomCode=${encodeURIComponent(roomCode)}`);
-    console.log('State API response:', data);
+    console.log('🔄 State API response:', data);
     paint(data);
     
     // Check if user is room creator to show/hide room management button
@@ -631,13 +634,10 @@ async function submit(amount) {
     playSfx(amount === 1 ? "good" : "bad");
 
     const impulse = (el.impulse.value || "").trim();
-    const note = (el.noteInput?.value || "").trim();
+    // Note field removed
     
-    // Combine impulse and note for the entry
+    // Create entry with impulse label
     const entryData = { delta: amount, label: impulse, userId: currentUserId };
-    if (note) {
-      entryData.note = note;
-    }
     
     await api("/state", {
       method: "POST",
@@ -648,11 +648,6 @@ async function submit(amount) {
     });
 
     el.impulse.value = "";
-    if (el.noteInput) {
-      el.noteInput.value = "";
-      updateCharCount();
-      // Clear note field after submission - note field is always visible
-    }
     await refresh();
   } catch (e) {
     const msg = String(e.message || "");
