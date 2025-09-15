@@ -24,6 +24,7 @@
     "wrangler": "^4.35.0"
   },
   "dependencies": {
+    "mcp-remote": "^0.1.29",
     "puppeteer": "^24.20.0"
   }
 }
