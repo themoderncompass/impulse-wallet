@@ -1335,13 +1335,13 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 
 .header-btn {
   appearance: none;
-  background: linear-gradient(145deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 20px;
-  padding: 8px 16px;
+  border-radius: 15px;
+  padding: 6px 12px;
   color: white;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -1350,14 +1350,6 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 .header-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.header-btn.focus-btn {
-  background: linear-gradient(145deg, #f093fb, #f5576c);
-}
-
-.header-btn.settings-btn {
-  background: linear-gradient(145deg, #4facfe, #00f2fe);
 }
 
 .wallet-balance-row {
@@ -1408,8 +1400,20 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
   margin-left: -20px;
 }
 
+/* Mobile balance display improvements */
+@media (max-width: 768px) {
+  .balance-display {
+    padding: 10px 15px;
+    min-width: 100px;
+  }
+
+  .balance-amount {
+    font-size: 28px;
+  }
+}
+
 .balance-amount {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: bold;
   color: #2d3748;
   margin-bottom: 5px;

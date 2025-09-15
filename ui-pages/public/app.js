@@ -458,6 +458,12 @@ function paint(state) {
   // state: { ok, roomCode, balance, history:[{player,delta,label,created_at}] }
   const history = Array.isArray(state.history) ? state.history : [];
 
+  // Show room-specific buttons when in a room
+  const focusBtn = document.getElementById('focus-open');
+  const roomBtn = document.getElementById('room-manage-open');
+  if (focusBtn) focusBtn.classList.remove('hidden');
+  if (roomBtn) roomBtn.classList.remove('hidden');
+
   // Weekly stats per player (balance + longest streak)
   const stats = computeWeeklyStats(history);
 
@@ -468,15 +474,18 @@ function paint(state) {
     const tr = document.createElement("tr");
     // Calculate progress toward $20 goal (capped at 100%)
     const progressPercent = Math.min(Math.max((s.balance / 20) * 100, 0), 100);
+    // Calculate fire emojis: 1 emoji for every 3 streaks (3=1🔥, 6=2🔥🔥, 9=3🔥🔥🔥, etc.)
+    const fireCount = Math.floor(s.currentStreak / 3);
+    const fireEmojis = '🔥'.repeat(fireCount);
+
     tr.innerHTML = `
       <td>${h(name)}</td>
       <td>
         <div class="progress-bar">
           <div class="progress-fill" style="width: ${progressPercent}%"></div>
         </div>
-        <div class="balance-amount">$${s.balance}</div>
       </td>
-      <td>${s.currentStreak || 0}${(s.currentStreak >= 3) ? ' 🔥' : ''}</td>
+      <td>${fireEmojis}</td>
     `;
     el.board.appendChild(tr);
   }
@@ -509,28 +518,26 @@ const when = row.created_at
   const me = stats.get(displayName);
   console.log('🔢 Balance lookup - displayName:', displayName, 'me:', me);
 
-  if (me) {
-    // Update balance display
-    const balanceEl = document.getElementById('current-balance');
-    if (balanceEl) {
-      balanceEl.textContent = `$${me.balance}`;
-      console.log('🔢 Updated balance display to:', `$${me.balance}`);
-    }
+  const currentBalance = me ? me.balance : 0;
 
-    // Update wallet image based on balance
-    updateWalletImage(me.balance);
-  } else {
-    console.log('🔢 No balance found for user:', displayName);
-    // Default to 0 if no user found
-    const balanceEl = document.getElementById('current-balance');
-    if (balanceEl) {
-      balanceEl.textContent = '$0';
-    }
-    updateWalletImage(0);
+  // Update balance display
+  const balanceEl = document.getElementById('current-balance');
+  if (balanceEl) {
+    balanceEl.textContent = `$${currentBalance}`;
+    console.log('🔢 Updated balance display to:', `$${currentBalance}`);
   }
 
-  // Get current balance for milestone checks
-  const currentBalance = me ? me.balance : 0;
+  // Update history modal balance to match current balance
+  const historyBalanceEl = document.getElementById('history-balance');
+  if (historyBalanceEl) {
+    historyBalanceEl.textContent = `$${currentBalance}`;
+  }
+
+  // Update wallet image based on balance
+  updateWalletImage(currentBalance);
+
+
+  // Use the currentBalance already calculated above for milestone checks
 
   // Only trigger milestone animations when we're actually in a room
   const session = getSession();
@@ -1280,12 +1287,7 @@ function initHistoryModal() {
     if (balanceEl) balanceEl.textContent = `$${currentBalance}`;
     if (streakEl) streakEl.textContent = bestStreak;
     
-    // Also update history modal balance
-    const historyBalanceEl = document.getElementById('history-balance');
-    if (historyBalanceEl) historyBalanceEl.textContent = `$${currentBalance}`;
-    
-    // Update wallet image based on balance
-    updateWalletImage(currentBalance);
+    // Note: history modal balance is now updated in paint() function to use same logic
   }
   
   function renderHistoryTable() {
