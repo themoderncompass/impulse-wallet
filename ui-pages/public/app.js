@@ -240,10 +240,11 @@ const el = {
 document.addEventListener('DOMContentLoaded', async () => {
   // Initialize anonymous user system
   initUserSystem();
-  
+
   // Initialize focus display to show selection prompt for new users
   updateFocusDisplay([]);
-  
+
+
   // Session restoration code (moved inside the function)
   const s = getSession(); // {roomCode, displayName} or null
   if (!s || !s.roomCode) return; // ✅ Now this return is inside the function
@@ -2350,4 +2351,5 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 // Add O key to reset onboarding for testing
+
 

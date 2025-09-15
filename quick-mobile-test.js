@@ -13,20 +13,13 @@ async function quickMobileTest() {
   await page.setViewport({ width: 375, height: 667 });
 
   try {
-    await page.goto('http://localhost:8788/', { waitUntil: 'networkidle0' });
+    // Use URL parameters for instant room entry
+    const testUrl = 'http://localhost:8788/?testUser=TestBot&testRoom=TESTROOM';
+    await page.goto(testUrl, { waitUntil: 'networkidle0' });
 
-    // Create a room quickly
-    const timestamp = Date.now();
-    const user = `Test${timestamp}`;
-    const room = `QUICK${Math.floor(Math.random() * 999)}`;
+    console.log('Testing with TestBot in TESTROOM via URL parameters');
 
-    console.log(`Testing with user: ${user}, room: ${room}`);
-
-    await page.type('#name', user);
-    await page.type('#room', room);
-    await page.click('#create');
-
-    // Wait for room creation
+    // Wait for automatic room entry
     await page.waitForSelector('#play:not(.hidden)', { timeout: 10000 });
     console.log('✅ Successfully entered room');
 
