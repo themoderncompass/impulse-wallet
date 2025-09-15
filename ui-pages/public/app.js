@@ -501,9 +501,17 @@ function paint(state) {
   if (inRoom) {
     if (focusBtn) focusBtn.classList.remove('hidden');
     if (roomBtn) roomBtn.classList.remove('hidden');
+
+    // Show mobile focus areas when in room
+    const mobileAreas = document.getElementById('mobile-focus-areas');
+    if (mobileAreas) mobileAreas.style.display = 'block';
   } else {
     if (focusBtn) focusBtn.classList.add('hidden');
     if (roomBtn) roomBtn.classList.add('hidden');
+
+    // Hide mobile focus areas when not in room
+    const mobileAreas = document.getElementById('mobile-focus-areas');
+    if (mobileAreas) mobileAreas.style.display = 'none';
   }
 
   // Weekly stats per player (balance + longest streak)
@@ -553,7 +561,8 @@ const when = row.created_at
       el.mine.appendChild(tr);
     });
   } catch (historyError) {
-    console.error('🚨 Error rendering history:', historyError);
+    console.warn('History rendering issue:', historyError.message || historyError);
+    if (el.mine) el.mine.innerHTML = '<tr><td colspan="4">History unavailable</td></tr>';
   }
 
   // Balance resolution (matching main branch logic)
@@ -2026,25 +2035,41 @@ function openFocusModal() {
   }
 }
 
-// Update focus area display
+// Update focus area display (both desktop and mobile)
 function updateFocusDisplay(focusAreas) {
+  // Desktop elements
   const focusPrompt = document.getElementById('focus-selection-prompt');
   const focusChips = document.getElementById('focus-chips');
-  
+
+  // Mobile elements
+  const mobilePrompt = document.getElementById('focus-selection-prompt-mobile');
+  const mobileChips = document.getElementById('focus-chips-mobile');
+  const mobileAreas = document.getElementById('mobile-focus-areas');
+
   if (focusAreas && focusAreas.length > 0) {
-    // Hide prompt, show focus chips
+    // Hide prompts, show focus chips
     if (focusPrompt) focusPrompt.style.display = 'none';
     if (focusChips) {
       focusChips.classList.remove('hidden');
       focusChips.style.display = 'block';
     }
+
+    // Mobile
+    if (mobilePrompt) mobilePrompt.style.display = 'none';
+    if (mobileChips) mobileChips.style.display = 'flex';
+    if (mobileAreas) mobileAreas.style.display = 'block';
   } else {
-    // Show prompt, hide focus chips
+    // Show prompts, hide focus chips
     if (focusPrompt) focusPrompt.style.display = 'flex';
     if (focusChips) {
       focusChips.classList.add('hidden');
       focusChips.style.display = 'none';
     }
+
+    // Mobile
+    if (mobilePrompt) mobilePrompt.style.display = 'block';
+    if (mobileChips) mobileChips.style.display = 'none';
+    if (mobileAreas) mobileAreas.style.display = 'block';
   }
 }
 
