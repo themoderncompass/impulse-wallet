@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 
 async function testUI() {
-  console.log('Starting UI test...');
+  console.log('🧪 Starting comprehensive UI test...');
 
   const browser = await puppeteer.launch({
     headless: false, // Show browser for debugging
@@ -18,95 +18,163 @@ async function testUI() {
     // Navigate to your local app
     await page.goto('http://localhost:8788', { waitUntil: 'networkidle2' });
 
-    console.log('Page loaded, taking screenshot...');
-    await page.screenshot({ path: 'screenshot-initial.png' });
+    console.log('📸 Page loaded, taking initial screenshot...');
+    await page.screenshot({ path: 'screenshot-01-initial.png' });
 
-    // Wait a moment for any dynamic content
+    // Wait for page to settle
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Test all main buttons and elements
-    const elements = {
-      // Main room buttons
-      create: await page.$('#create'),
-      join: await page.$('#join'),
+    // === STEP 1: CREATE ROOM AND USER ===
+    console.log('🏠 Creating new room and user...');
 
-      // Action buttons
-      plus: await page.$('#plus'),
-      minus: await page.$('#minus'),
-      undo: await page.$('#undo'),
+    const testName = `TestUser${Date.now()}`;
+    const testRoom = `TEST${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 
-      // Settings menu
-      settingsToggle: await page.$('.settings-toggle'),
-      settingsDropdown: await page.$('#settingsDropdown'),
+    // Fill in user details
+    await page.type('#name', testName);
+    await page.type('#room', testRoom);
 
-      // Modal triggers
-      historyOpen: await page.$('#history-open'),
-      focusOpen: await page.$('#focus-open'),
-      instructionsOpen: await page.$('#instructions-open'),
-      roomManageOpen: await page.$('#room-manage-open'),
+    console.log(`Creating room: ${testRoom} with user: ${testName}`);
+    await page.screenshot({ path: 'screenshot-02-form-filled.png' });
 
-      // Modals
-      historyModal: await page.$('#history-modal'),
-      focusModal: await page.$('#focus-modal'),
-      instructionsModal: await page.$('#instructions-modal'),
-      roomManageModal: await page.$('#room-manage-modal'),
+    // Click create room
+    await page.click('#create');
 
-      // Balance and wallet
-      currentBalance: await page.$('#current-balance'),
-      walletDisplay: await page.$('#wallet-display'),
+    // Wait for room creation and page transition
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    await page.screenshot({ path: 'screenshot-03-room-created.png' });
 
-      // Input fields
-      roomInput: await page.$('#room'),
-      nameInput: await page.$('#name'),
-      impulseInput: await page.$('#impulse'),
-      noteInput: await page.$('#note-input')
-    };
+    // === STEP 2: VERIFY ROOM INTERFACE LOADED ===
+    console.log('🔍 Checking if room interface loaded...');
 
-    console.log('=== ELEMENT TEST RESULTS ===');
-    for (const [name, element] of Object.entries(elements)) {
-      console.log(`${name}: ${element ? '✅ Found' : '❌ Missing'}`);
+    const playSection = await page.$('#play');
+    const playVisible = await page.evaluate(() => {
+      const playEl = document.getElementById('play');
+      return playEl && !playEl.classList.contains('hidden');
+    });
+
+    if (!playVisible) {
+      console.error('❌ Room interface did not load properly');
+      await page.screenshot({ path: 'screenshot-ERROR-room-not-loaded.png' });
+      return;
     }
 
-    // Test hamburger menu interaction
-    console.log('=== TESTING HAMBURGER MENU ===');
-    if (elements.settingsToggle) {
-      try {
-        await elements.settingsToggle.click();
-        await page.waitForTimeout(500);
+    console.log('✅ Room interface loaded successfully');
 
-        const dropdownVisible = await page.evaluate(() => {
-          const dropdown = document.getElementById('settingsDropdown');
-          return dropdown && dropdown.classList.contains('active');
-        });
+    // === STEP 3: TEST BALANCE SYSTEM ===
+    console.log('💰 Testing balance update system...');
 
-        console.log('Hamburger menu toggle result:', dropdownVisible ? '✅ Working' : '❌ Not working');
-        await page.screenshot({ path: 'screenshot-hamburger-test.png' });
-      } catch (error) {
-        console.log('Hamburger menu test failed:', error.message);
-      }
+    // Get initial balance
+    const initialBalance = await page.evaluate(() => {
+      const balanceEl = document.getElementById('current-balance');
+      return balanceEl ? balanceEl.textContent : 'NOT FOUND';
+    });
+
+    console.log(`Initial balance: ${initialBalance}`);
+    await page.screenshot({ path: 'screenshot-04-initial-balance.png' });
+
+    // Test deposit (+1)
+    console.log('➕ Testing deposit (+$1)...');
+    await page.type('#impulse', 'Test deposit');
+    await page.click('#plus');
+
+    // Wait for API call and UI update
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const balanceAfterDeposit = await page.evaluate(() => {
+      const balanceEl = document.getElementById('current-balance');
+      return balanceEl ? balanceEl.textContent : 'NOT FOUND';
+    });
+
+    console.log(`Balance after deposit: ${balanceAfterDeposit}`);
+    await page.screenshot({ path: 'screenshot-05-after-deposit.png' });
+
+    // Test withdrawal (-1)
+    console.log('➖ Testing withdrawal (-$1)...');
+    await page.type('#impulse', 'Test withdrawal');
+    await page.click('#minus');
+
+    // Wait for API call and UI update
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const balanceAfterWithdrawal = await page.evaluate(() => {
+      const balanceEl = document.getElementById('current-balance');
+      return balanceEl ? balanceEl.textContent : 'NOT FOUND';
+    });
+
+    console.log(`Balance after withdrawal: ${balanceAfterWithdrawal}`);
+    await page.screenshot({ path: 'screenshot-06-after-withdrawal.png' });
+
+    // === STEP 4: TEST HISTORY MODAL BALANCE ===
+    console.log('📊 Testing history modal balance...');
+
+    await page.click('#history-open');
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const historyModalBalance = await page.evaluate(() => {
+      const historyBalanceEl = document.getElementById('history-balance');
+      return historyBalanceEl ? historyBalanceEl.textContent : 'NOT FOUND';
+    });
+
+    console.log(`History modal balance: ${historyModalBalance}`);
+    await page.screenshot({ path: 'screenshot-07-history-modal.png' });
+
+    // Close modal
+    await page.click('#history-close');
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // === STEP 5: FINAL BALANCE CHECK ===
+    const finalBalance = await page.evaluate(() => {
+      const balanceEl = document.getElementById('current-balance');
+      return balanceEl ? balanceEl.textContent : 'NOT FOUND';
+    });
+
+    console.log(`Final balance: ${finalBalance}`);
+
+    // === ANALYSIS ===
+    console.log('\n🔍 === BALANCE UPDATE ANALYSIS ===');
+    console.log(`Initial: ${initialBalance}`);
+    console.log(`After +$1: ${balanceAfterDeposit}`);
+    console.log(`After -$1: ${balanceAfterWithdrawal}`);
+    console.log(`History Modal: ${historyModalBalance}`);
+    console.log(`Final: ${finalBalance}`);
+
+    // Check if balance is updating in real-time
+    const realTimeWorking = (
+      initialBalance !== balanceAfterDeposit &&
+      balanceAfterDeposit !== balanceAfterWithdrawal
+    );
+
+    console.log(`\n💡 Real-time balance updates: ${realTimeWorking ? '✅ WORKING' : '❌ BROKEN'}`);
+
+    if (!realTimeWorking) {
+      console.log('🚨 BALANCE ISSUE CONFIRMED: Balance only updates when history modal is opened');
     }
 
-    // Test modal opens (if elements exist)
-    console.log('=== TESTING MODAL FUNCTIONALITY ===');
-    if (elements.instructionsOpen) {
-      try {
-        await elements.instructionsOpen.click();
-        await page.waitForTimeout(500);
+    // === STEP 6: TEST OTHER UI ELEMENTS ===
+    console.log('\n🧪 Testing hamburger menu...');
 
-        const modalVisible = await page.evaluate(() => {
-          const modal = document.getElementById('instructions-modal');
-          return modal && !modal.hasAttribute('hidden');
-        });
-
-        console.log('Instructions modal test:', modalVisible ? '✅ Opens' : '❌ Does not open');
-        await page.screenshot({ path: 'screenshot-instructions-modal.png' });
-      } catch (error) {
-        console.log('Instructions modal test failed:', error.message);
-      }
+    const settingsToggle = await page.$('.settings-toggle');
+    if (settingsToggle) {
+      await settingsToggle.click();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await page.screenshot({ path: 'screenshot-08-hamburger-test.png' });
     }
 
-    // Take final screenshot
-    await page.screenshot({ path: 'screenshot-final.png' });
+    // Take final screenshots
+    await page.screenshot({ path: 'screenshot-09-final-state.png' });
+
+    console.log('\n🎯 === TEST COMPLETE ===');
+    console.log('Check screenshot files for visual confirmation');
+    console.log('Check browser console for debugging logs');
+
+    if (!realTimeWorking) {
+      console.log('\n🔧 NEXT STEPS TO FIX BALANCE ISSUE:');
+      console.log('1. Check debugging logs in browser console');
+      console.log('2. Verify API returns updated data immediately');
+      console.log('3. Check displayName matching in computeWeeklyStats');
+      console.log('4. Verify current week filtering logic');
+    }
 
   } catch (error) {
     console.error('Test failed:', error);

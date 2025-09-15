@@ -387,15 +387,45 @@ function isInCurrentWeek(ts) {
 // Compute per-player weekly balance and longest positive streak (deposits)
 // Assumes state.history is ascending by created_at (your API already returns ASC)
 function computeWeeklyStats(history) {
+  console.log('🗓️ Computing weekly stats for', history.length, 'entries');
   const byPlayer = new Map();
+  const byUserId = new Map(); // Track by userId as backup
+  let filteredCount = 0;
   for (const r of history) {
-    if (!r.created_at || !isInCurrentWeek(r.created_at)) continue;
+    if (!r.created_at || !isInCurrentWeek(r.created_at)) {
+      console.log('🗓️ Skipping entry (not current week):', r);
+      continue;
+    }
+    filteredCount++;
 
     const name = r.player || "—";
+    const userId = r.userId || r.user_id; // Handle both field names
+
+    console.log('🗓️ Processing entry - player:', name, 'userId:', userId, 'delta:', r.delta);
+
+    // Track by player name
     let s = byPlayer.get(name);
     if (!s) {
       s = { balance: 0, currentStreak: 0, longestStreak: 0 };
       byPlayer.set(name, s);
+    }
+
+    // Also track by userId as backup
+    if (userId) {
+      let userStats = byUserId.get(userId);
+      if (!userStats) {
+        userStats = { balance: 0, currentStreak: 0, longestStreak: 0 };
+        byUserId.set(userId, userStats);
+      }
+
+      const delta = r.delta || 0;
+      userStats.balance += delta;
+      if (delta > 0) {
+        userStats.currentStreak += 1;
+        if (userStats.currentStreak > userStats.longestStreak) userStats.longestStreak = userStats.currentStreak;
+      } else if (delta < 0) {
+        userStats.currentStreak = 0;
+      }
     }
 
     const delta = r.delta || 0;
@@ -408,6 +438,14 @@ function computeWeeklyStats(history) {
       s.currentStreak = 0; // any withdrawal breaks the streak
     }
   }
+  console.log('🗓️ Filtered', filteredCount, 'entries for current week');
+  console.log('🗓️ Stats map size:', byPlayer.size);
+  for (const [key, value] of byPlayer.entries()) {
+    console.log('🗓️ Player:', key, 'Balance:', value.balance);
+  }
+
+  // Store byUserId for fallback lookup
+  byPlayer._byUserId = byUserId;
   return byPlayer;
 }
 // --- state ---
@@ -444,9 +482,12 @@ function paint(state) {
   }
 
   // My history (latest first) — show ONLY my rows
-  el.mine.innerHTML = "";
-  const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
-  myHistory.slice().reverse().forEach(row => {
+  console.log('🔍 About to render history, el.mine:', el.mine);
+  try {
+    el.mine.innerHTML = "";
+    const myHistory = history.filter(row => (row.player || "") === (displayName || ""));
+    console.log('🔍 Found', myHistory.length, 'history entries for', displayName);
+    myHistory.slice().reverse().forEach(row => {
     const tr = document.createElement("tr");
 const when = row.created_at
   ? parseTS(row.created_at).toLocaleString(undefined, {
@@ -457,46 +498,36 @@ const when = row.created_at
       minute: "2-digit"
     })
   : "";
-    tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
-    el.mine.appendChild(tr);
-  });
-
-  // FIXED: Simple balance resolution like the working prototype
-  let userBalance = 0;
-  let userStats = null;
-  
-  console.log('Balance Debug:', { displayName, statsKeys: Array.from(stats.keys()), historyLength: history.length });
-  
-  // Try to get current user's balance
-  if (displayName && stats.has(displayName)) {
-    userStats = stats.get(displayName);
-    userBalance = userStats.balance;
-  } else if (stats.size === 1) {
-    // Single user in room - get the only balance
-    userStats = Array.from(stats.values())[0];
-    userBalance = userStats.balance;
-  } else if (stats.size > 0) {
-    // Multiple users - try to find a match or use first entry
-    const allStats = Array.from(stats.entries());
-    userStats = allStats[0][1]; // Use first user's stats as fallback
-    userBalance = userStats.balance;
+      tr.innerHTML = `<td>${h(when)}</td><td>${row.delta > 0 ? "+$1" : "-$1"}</td><td>${h(row.label || "")}</td><td>${h(row.player || "")}</td>`;
+      el.mine.appendChild(tr);
+    });
+  } catch (historyError) {
+    console.error('🚨 Error rendering history:', historyError);
   }
-  
-  console.log('🔢 Balance Debug - Resolved balance:', userBalance);
-  console.log('🔢 Balance Debug - userStats:', userStats);
-  console.log('🔢 Balance Debug - displayName:', displayName);
 
-  // Update balance display
-  const balanceEl = document.getElementById('current-balance');
-  if (balanceEl) {
-    balanceEl.textContent = `$${userBalance}`;
-    console.log('🔢 Updated balance display to:', `$${userBalance}`);
+  // Balance resolution (matching main branch logic)
+  const me = stats.get(displayName);
+  console.log('🔢 Balance lookup - displayName:', displayName, 'me:', me);
+
+  if (me) {
+    // Update balance display
+    const balanceEl = document.getElementById('current-balance');
+    if (balanceEl) {
+      balanceEl.textContent = `$${me.balance}`;
+      console.log('🔢 Updated balance display to:', `$${me.balance}`);
+    }
+
+    // Update wallet image based on balance
+    updateWalletImage(me.balance);
   } else {
-    console.error('🔢 Balance element not found!');
+    console.log('🔢 No balance found for user:', displayName);
+    // Default to 0 if no user found
+    const balanceEl = document.getElementById('current-balance');
+    if (balanceEl) {
+      balanceEl.textContent = '$0';
+    }
+    updateWalletImage(0);
   }
-  
-  // Update wallet image based on balance
-  updateWalletImage(userBalance);
   
   // Celebration for reaching +$20 (only trigger once per milestone achievement)
   if (userBalance >= 20 && lastCelebrationBalance !== userBalance) {

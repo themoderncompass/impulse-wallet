@@ -1398,7 +1398,8 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 .focus-areas {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  padding: 0 4px;
 }
 
 .section-title {
@@ -1448,8 +1449,9 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 .balance-actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   align-items: stretch;
+  padding: 0 4px;
 }
 
 .action-button {
@@ -1589,6 +1591,38 @@ main.container { flex: 1 0 auto; }  /* grow main to fill space */
 .gradient-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.outline-button {
+  background: white;
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.grey-outline {
+  border-color: #9ca3af;
+  color: #6b7280;
+}
+
+.grey-outline:hover {
+  border-color: #6b7280;
+  color: #4b5563;
+  background: #f9fafb;
+}
+
+.red-outline {
+  border-color: #ef4444;
+  color: #dc2626;
+}
+
+.red-outline:hover {
+  border-color: #dc2626;
+  color: #b91c1c;
+  background: #fef2f2;
 }
 
 /* History Button */
