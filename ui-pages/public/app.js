@@ -582,9 +582,9 @@ const when = row.created_at
   // Use the currentBalance already calculated above for milestone checks
 
   // Only trigger milestone animations when we're actually in a room
-  const inRoom = state.ok && roomCode && displayName;
+  const inRoomForMilestones = state.ok && roomCode && displayName;
 
-  if (inRoom) {
+  if (inRoomForMilestones) {
     // Celebration for reaching +$20 (only trigger once per milestone achievement)
     if (currentBalance >= 20 && lastCelebrationBalance !== currentBalance) {
       show("You hit +$20 this week. Keep going.");
