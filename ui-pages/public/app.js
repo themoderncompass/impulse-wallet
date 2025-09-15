@@ -582,8 +582,7 @@ const when = row.created_at
   // Use the currentBalance already calculated above for milestone checks
 
   // Only trigger milestone animations when we're actually in a room
-  const session = getSession();
-  const inRoom = session && session.roomCode && session.displayName;
+  const inRoom = state.ok && roomCode && displayName;
 
   if (inRoom) {
     // Celebration for reaching +$20 (only trigger once per milestone achievement)
