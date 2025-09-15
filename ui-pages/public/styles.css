@@ -1112,6 +1112,7 @@ th, td {
     flex-direction: column !important;
     gap: 12px !important;
     padding: 0 4px !important;
+    align-items: stretch !important;
   }
 
   /* Actions right side - narrower */
@@ -1122,6 +1123,7 @@ th, td {
     flex-direction: column !important;
     gap: 12px !important;
     padding: 0 4px !important;
+    align-items: stretch !important;
   }
 
   /* Narrower action buttons for mobile */
@@ -1148,21 +1150,29 @@ th, td {
     cursor: pointer !important;
     transition: all 0.3s ease !important;
     min-height: 44px !important;
-    display: flex !important;
+    display: flex;
     flex-direction: column !important;
     justify-content: center !important;
   }
 
-  /* Focus chips to match action button heights */
+  /* Remove focus-chips container margin to align with action buttons */
+  .focus-chips {
+    margin: 0 !important;
+    padding: 0 4px !important;
+    margin-top: -4px !important;
+  }
+
+  /* Focus chips to match action button dimensions exactly */
   .focus-chips .chip {
-    padding: 12px 8px !important;
-    font-size: 11px !important;
-    margin: 0 2px 12px 0 !important;
+    padding: 14px 16px !important;
+    font-size: 12px !important;
+    margin: 0 !important;
     border-radius: 8px !important;
     background: #e5e7eb !important;
     color: #374151 !important;
     border: 1px solid #d1d5db !important;
-    min-height: 44px !important;
+    height: 44px !important;
+    box-sizing: border-box !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1184,7 +1194,7 @@ th, td {
 
   .section-title {
     font-size: 13px !important;
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 12px !important;
   }
 
   .focus-selection-prompt {
@@ -1213,7 +1223,8 @@ th, td {
   .action-button {
     padding: 14px 16px !important;
     font-size: 12px !important;
-    min-height: 44px; /* Maintain touch target */
+    height: 44px !important;
+    box-sizing: border-box !important;
   }
 
   /* LEADERBOARD - MINIMAL SPACING */
