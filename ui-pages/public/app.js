@@ -528,23 +528,26 @@ const when = row.created_at
     }
     updateWalletImage(0);
   }
-  
+
+  // Get current balance for milestone checks
+  const currentBalance = me ? me.balance : 0;
+
   // Celebration for reaching +$20 (only trigger once per milestone achievement)
-  if (userBalance >= 20 && lastCelebrationBalance !== userBalance) {
+  if (currentBalance >= 20 && lastCelebrationBalance !== currentBalance) {
     show("You hit +$20 this week. Keep going.");
     showCelebration();
-    lastCelebrationBalance = userBalance;
+    lastCelebrationBalance = currentBalance;
   }
-  
+
   // Warning for hitting -$20 (only trigger once per milestone)
-  if (userBalance <= -20 && lastWarningBalance !== userBalance) {
+  if (currentBalance <= -20 && lastWarningBalance !== currentBalance) {
     show("You hit −$20 this week. Keep tracking.", true);
     showWarning();
-    lastWarningBalance = userBalance;
+    lastWarningBalance = currentBalance;
   }
-  
+
   // Reset milestone tracking if balance changes significantly
-  if (userBalance > -20 && userBalance < 20) {
+  if (currentBalance > -20 && currentBalance < 20) {
     lastCelebrationBalance = null;
     lastWarningBalance = null;
   }
@@ -1866,6 +1869,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Test keyboard shortcuts from prototype (for testing animations)
 
 // ===== WALLET IMAGE SYSTEM =====
+let lastWalletBalance = null; // Track previous balance to avoid unnecessary animations
 
 function updateWalletImage(balance) {
   const walletImage = document.getElementById('wallet-display');
@@ -1873,35 +1877,42 @@ function updateWalletImage(balance) {
     console.log('Wallet image element not found');
     return;
   }
-  
+
+  // Only animate if balance actually changed
+  const balanceChanged = lastWalletBalance !== balance;
+
   let imageName = 'Wallet empty.png';
-  
+
   // Use all 5 wallet states based on dollar amount
   if (balance >= 15) imageName = 'Wallet 4 bills.png';
   else if (balance >= 10) imageName = 'Wallet 3 bills.png';
   else if (balance >= 5) imageName = 'Wallet 2 bills.png';
   else if (balance >= 1) imageName = 'Wallet 1 bill.png';
   else imageName = 'Wallet empty.png';
-  
+
   console.log('Updating wallet image:', imageName, 'for balance:', balance);
-  
-  // Add animation class
-  walletImage.classList.add('updating');
-  
+
+  // Only add animation if balance changed
+  if (balanceChanged) {
+    walletImage.classList.add('updating');
+    // Remove animation class after animation completes
+    setTimeout(() => {
+      walletImage.classList.remove('updating');
+    }, 500);
+  }
+
   // Update image - fixed path
   walletImage.style.backgroundImage = `url('wallet-assets/${imageName}')`;
-  
+
   // Ensure element has proper size and background settings
   walletImage.style.width = '300px';
   walletImage.style.height = '200px';
   walletImage.style.backgroundSize = 'contain';
   walletImage.style.backgroundRepeat = 'no-repeat';
   walletImage.style.backgroundPosition = 'center';
-  
-  // Remove animation class after animation completes
-  setTimeout(() => {
-    walletImage.classList.remove('updating');
-  }, 500);
+
+  // Update tracked balance
+  lastWalletBalance = balance;
 }
 
 // Focus modal functionality
