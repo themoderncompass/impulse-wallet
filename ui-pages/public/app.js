@@ -476,7 +476,7 @@ function paint(state) {
         </div>
         <div class="balance-amount">$${s.balance}</div>
       </td>
-      <td>${s.longestStreak || 0}</td>
+      <td>${s.currentStreak || 0}${(s.currentStreak >= 3) ? ' 🔥' : ''}</td>
     `;
     el.board.appendChild(tr);
   }
@@ -532,24 +532,30 @@ const when = row.created_at
   // Get current balance for milestone checks
   const currentBalance = me ? me.balance : 0;
 
-  // Celebration for reaching +$20 (only trigger once per milestone achievement)
-  if (currentBalance >= 20 && lastCelebrationBalance !== currentBalance) {
-    show("You hit +$20 this week. Keep going.");
-    showCelebration();
-    lastCelebrationBalance = currentBalance;
-  }
+  // Only trigger milestone animations when we're actually in a room
+  const session = getSession();
+  const inRoom = session && session.roomCode && session.displayName;
 
-  // Warning for hitting -$20 (only trigger once per milestone)
-  if (currentBalance <= -20 && lastWarningBalance !== currentBalance) {
-    show("You hit −$20 this week. Keep tracking.", true);
-    showWarning();
-    lastWarningBalance = currentBalance;
-  }
+  if (inRoom) {
+    // Celebration for reaching +$20 (only trigger once per milestone achievement)
+    if (currentBalance >= 20 && lastCelebrationBalance !== currentBalance) {
+      show("You hit +$20 this week. Keep going.");
+      showCelebration();
+      lastCelebrationBalance = currentBalance;
+    }
 
-  // Reset milestone tracking if balance changes significantly
-  if (currentBalance > -20 && currentBalance < 20) {
-    lastCelebrationBalance = null;
-    lastWarningBalance = null;
+    // Warning for hitting -$20 (only trigger once per milestone)
+    if (currentBalance <= -20 && lastWarningBalance !== currentBalance) {
+      show("You hit −$20 this week. Keep tracking.", true);
+      showWarning();
+      lastWarningBalance = currentBalance;
+    }
+
+    // Reset milestone tracking if balance changes significantly
+    if (currentBalance > -20 && currentBalance < 20) {
+      lastCelebrationBalance = null;
+      lastWarningBalance = null;
+    }
   }
 }
 
@@ -1739,8 +1745,8 @@ function showCelebration() {
 
 // Show milestone warning with recharge animation from prototype
 function showWarning() {
-  console.log('⚡ TRIGGERING RECHARGE ANIMATION!');
-  
+  console.log('💥 TRIGGERING ENHANCED FAILURE ANIMATION!');
+
   // Create animation container
   const container = document.createElement('div');
   container.className = 'animation-container';
@@ -1752,64 +1758,86 @@ function showWarning() {
   container.style.pointerEvents = 'none';
   container.style.zIndex = '9999';
   document.body.appendChild(container);
-  
-  // Create recharge overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'recharge-overlay';
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100vw';
-  overlay.style.height = '100vh';
-  overlay.style.background = 'linear-gradient(135deg, rgba(255,107,53,0.8), rgba(255,154,86,0.6))';
-  overlay.style.pointerEvents = 'none';
-  overlay.style.zIndex = '1000';
-  overlay.style.animation = 'rechargeOverlay 3s ease-out';
-  container.appendChild(overlay);
-  
-  // Create rising arrow icon
-  const risingArrow = document.createElement('div');
-  risingArrow.className = 'rising-arrow-icon';
-  risingArrow.style.position = 'fixed';
-  risingArrow.style.top = '40%';
-  risingArrow.style.left = '50%';
-  risingArrow.style.transform = 'translate(-50%, -50%)';
-  risingArrow.style.width = '60px';
-  risingArrow.style.height = '80px';
-  risingArrow.style.pointerEvents = 'none';
-  risingArrow.style.zIndex = '1002';
-  risingArrow.innerHTML = `
-    <div class="arrow-shaft" style="width: 6px; height: 50px; background: linear-gradient(180deg, #48bb78, #38a169); margin: 0 auto; border-radius: 3px;"></div>
-    <div class="arrow-head" style="width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 20px solid #48bb78; margin: -2px auto 0; position: relative; z-index: 1;"></div>
-    <div class="arrow-trail" style="width: 20px; height: 20px; background: linear-gradient(180deg, rgba(72,187,120,0.6), rgba(72,187,120,0)); border-radius: 2px; margin: 5px auto;"></div>
-  `;
-  risingArrow.style.animation = 'arrowRise 3s ease-out';
-  container.appendChild(risingArrow);
-  
-  // Create motivational text
+
+  // Create screen shake effect
+  document.body.style.animation = 'screenShake 0.5s ease-in-out';
+  setTimeout(() => {
+    document.body.style.animation = '';
+  }, 500);
+
+  // Create falling broken heart emojis
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const heart = document.createElement('div');
+      heart.style.position = 'absolute';
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.top = '-50px';
+      heart.style.fontSize = '40px';
+      heart.style.zIndex = '1001';
+      heart.style.animation = `fallHearts ${3 + Math.random()}s linear forwards`;
+      heart.textContent = '💔';
+      container.appendChild(heart);
+    }, i * 100);
+  }
+
+  // Create central dramatic emoji with pulse
+  const centralEmoji = document.createElement('div');
+  centralEmoji.style.position = 'fixed';
+  centralEmoji.style.top = '35%';
+  centralEmoji.style.left = '50%';
+  centralEmoji.style.transform = 'translate(-50%, -50%)';
+  centralEmoji.style.fontSize = '100px';
+  centralEmoji.style.zIndex = '1002';
+  centralEmoji.style.animation = 'dramaPulse 2s ease-out';
+  centralEmoji.textContent = '😰';
+  container.appendChild(centralEmoji);
+
+  // Create floating sad emojis around the screen
+  const sadEmojis = ['😔', '😞', '😢', '😭', '😩'];
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => {
+      const emoji = document.createElement('div');
+      emoji.style.position = 'fixed';
+      emoji.style.left = Math.random() * 80 + 10 + '%';
+      emoji.style.top = Math.random() * 60 + 20 + '%';
+      emoji.style.fontSize = '30px';
+      emoji.style.zIndex = '1001';
+      emoji.style.animation = 'floatSad 2s ease-in-out infinite';
+      emoji.textContent = sadEmojis[Math.floor(Math.random() * sadEmojis.length)];
+      container.appendChild(emoji);
+    }, i * 200);
+  }
+
+  // Create motivational comeback text
   const motivationalText = document.createElement('div');
-  motivationalText.className = 'motivational-text';
-  motivationalText.innerHTML = 'Keep Moving Forward!<br><small>Progress isn\'t about perfection. It\'s about persistence</small>';
+  motivationalText.innerHTML = 'Reset & Rise! 💪<br><small>Every setback is a setup for a comeback</small>';
   motivationalText.style.position = 'fixed';
-  motivationalText.style.top = '60%';
+  motivationalText.style.top = '65%';
   motivationalText.style.left = '50%';
   motivationalText.style.transform = 'translate(-50%, -50%)';
-  motivationalText.style.fontSize = '2rem';
-  motivationalText.style.fontWeight = 'bold';
-  motivationalText.style.color = '#68d391';
+  motivationalText.style.color = '#dc2626';
+  motivationalText.style.fontSize = '28px';
+  motivationalText.style.fontWeight = '700';
   motivationalText.style.textAlign = 'center';
   motivationalText.style.pointerEvents = 'none';
   motivationalText.style.zIndex = '1001';
-  motivationalText.style.textShadow = '1px 1px 2px rgba(0,0,0,0.2)';
-  motivationalText.style.animation = 'motivationalTextGlow 3s ease-out';
+  motivationalText.style.textShadow = '2px 2px 4px rgba(0,0,0,0.3)';
+  motivationalText.style.animation = 'comebackGlow 2.5s ease-out';
+  motivationalText.style.opacity = '0';
   container.appendChild(motivationalText);
-  
-  // Add wallet recharge effect
+
+  // Delayed text appearance with dramatic entrance
+  setTimeout(() => {
+    motivationalText.style.opacity = '1';
+    motivationalText.style.animation = 'comebackGlow 2s ease-out';
+  }, 1000);
+
+  // Add wallet dramatic drain effect
   const walletImage = document.getElementById('wallet-display');
   if (walletImage) {
-    walletImage.style.animation = 'walletRecharge 1s ease-out';
+    walletImage.style.animation = 'walletDrain 1.5s ease-out';
   }
-  
+
   // Clean up after animation
   setTimeout(() => {
     if (container && container.parentNode) {
@@ -1818,7 +1846,7 @@ function showWarning() {
     if (walletImage) {
       walletImage.style.animation = '';
     }
-  }, 3500);
+  }, 4000);
 }
 
 // Close celebration overlay
