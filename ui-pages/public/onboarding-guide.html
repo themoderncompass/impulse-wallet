@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Impulse Wallet - Complete Onboarding Guide</title>
+  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    /* Guide-specific styles */
+    .guide-container {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .guide-content {
+      padding: 2rem;
+    }
+
+    .guide-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .guide-title {
+      font-size: 2.5rem;
+      margin: 0 0 0.5rem 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .guide-subtitle {
+      color: #666;
+      font-size: 1.2rem;
+      margin: 0;
+    }
+
+    .guide-nav {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .guide-nav h3 {
+      margin: 0 0 1rem 0;
+      color: #333;
+    }
+
+    .guide-nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      columns: 2;
+      column-gap: 2rem;
+    }
+
+    .guide-nav li {
+      margin: 0.5rem 0;
+      break-inside: avoid;
+    }
+
+    .guide-nav a {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+
+    .guide-nav a:hover {
+      text-decoration: underline;
+    }
+
+    .quick-start {
+      background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+      border-radius: 15px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .quick-start h2 {
+      margin: 0 0 1rem 0;
+      color: #333;
+    }
+
+    .section {
+      margin: 2rem 0;
+    }
+
+    .section h2 {
+      color: #333;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .section h3 {
+      color: #444;
+      margin: 1.5rem 0 1rem 0;
+    }
+
+    .section h4 {
+      color: #555;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .feature-card {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 1.5rem;
+      border-left: 4px solid #667eea;
+    }
+
+    .feature-card h4 {
+      margin: 0 0 1rem 0;
+      color: #333;
+    }
+
+    .step-list {
+      counter-reset: step-counter;
+      list-style: none;
+      padding: 0;
+    }
+
+    .step-list li {
+      counter-increment: step-counter;
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 10px;
+      position: relative;
+      padding-left: 3rem;
+    }
+
+    .step-list li::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 1rem;
+      top: 1rem;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      width: 1.5rem;
+      height: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .examples {
+      background: #e8f5e8;
+      border-left: 4px solid #059669;
+      border-radius: 0 10px 10px 0;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .examples.negative {
+      background: #fee8e8;
+      border-left-color: #dc2626;
+    }
+
+    .examples.warning {
+      background: #fef3cd;
+      border-left-color: #f59e0b;
+    }
+
+    .code-block {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+    }
+
+    .back-to-app {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 15px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin: 2rem 0;
+      transition: transform 0.2s ease;
+    }
+
+    .back-to-app:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Screenshot Styles */
+    .screenshot-container {
+      margin: 2rem 0;
+      text-align: center;
+    }
+
+    .screenshot {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border: 1px solid #e9ecef;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .screenshot:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.16);
+    }
+
+    .screenshot-caption {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #6c757d;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+
+    .screenshot-card {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid #e9ecef;
+    }
+
+    .screenshot-card h4 {
+      margin: 0 0 1rem 0;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .screenshot-card .screenshot {
+      margin-bottom: 1rem;
+    }
+
+    .screenshot-note {
+      background: #e7f3ff;
+      border-left: 4px solid #0066cc;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+
+    .screenshot-note strong {
+      color: #0066cc;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .guide-container {
+        margin: 1rem;
+        border-radius: 15px;
+      }
+
+      .guide-content {
+        padding: 1.5rem;
+      }
+
+      .guide-title {
+        font-size: 2rem;
+      }
+
+      .guide-nav ul {
+        columns: 1;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .step-list li {
+        padding-left: 2.5rem;
+      }
+
+      .screenshot-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .screenshot-card {
+        padding: 1rem;
+      }
+
+      .screenshot:hover {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .guide-title {
+        font-size: 1.8rem;
+      }
+
+      .guide-subtitle {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="guide-container">
+    <div class="guide-content">
+      <div class="guide-header">
+        <h1 class="guide-title">Impulse Wallet</h1>
+        <p class="guide-subtitle">Complete Onboarding Guide</p>
+        <p style="color: #666; font-style: italic;">Transform your self-control into a game you actually want to play</p>
+      </div>
+
+      <div class="quick-start">
+        <h2>🚀 Quick Start (2 minutes)</h2>
+        <ol class="step-list">
+          <li><strong>Join or Create Room</strong> - The first screen you'll see! Connect with others for accountability, or click "Skip" to go solo</li>
+          <li><strong>No Signup Required</strong> - Just open the app and you're ready to go with your anonymous account</li>
+          <li><strong>Choose Focus Areas</strong> - Click "Weekly Focus" to pick 2-3 areas for this week (these are private to you - others can't see your specific areas)</li>
+          <li><strong>Start Tracking</strong> - Use +$1 for good choices, -$1 for slips - actions can be inside OR outside your focus areas</li>
+        </ol>
+        <p style="margin: 1rem 0 0 0;"><strong>Ready to dive deeper?</strong> Continue reading for the complete experience.</p>
+      </div>
+
+      <nav class="guide-nav">
+        <h3>📋 Table of Contents</h3>
+        <ul>
+          <li><a href="#understanding">Understanding Impulse Wallet</a></li>
+          <li><a href="#getting-started-solo">Getting Started Solo</a></li>
+          <li><a href="#virtual-wallet">The Virtual Wallet System</a></li>
+          <li><a href="#focus-areas">Weekly Focus Areas</a></li>
+          <li><a href="#creating-rooms">Creating & Managing Rooms</a></li>
+          <li><a href="#joining-rooms">Joining Existing Rooms</a></li>
+          <li><a href="#daily-usage">Daily Usage & Best Practices</a></li>
+          <li><a href="#advanced">Advanced Features</a></li>
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+          <li><a href="#success-tips">Tips for Success</a></li>
+        </ul>
+      </nav>
+
+      <section id="understanding" class="section">
+        <h2>Understanding Impulse Wallet</h2>
+
+        <h3>What Is Impulse Wallet?</h3>
+        <p>Impulse Wallet is your personal accountability partner that transforms self-control into a simple, gamified experience. Instead of complex habit tracking that overwhelms you, we use a straightforward virtual wallet system where:</p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>💰 Simple Dollar System</h4>
+            <p>Good choices = +$1 deposits<br>
+            Giving in to impulses = -$1 withdrawals</p>
+          </div>
+          <div class="feature-card">
+            <h4>🎯 Weekly Focus Areas</h4>
+            <p>Choose 2-3 areas to focus on each week, with fresh starts every Monday</p>
+          </div>
+          <div class="feature-card">
+            <h4>👥 Accountability Rooms</h4>
+            <p>Optional private groups with invite codes where members see each other's progress</p>
+          </div>
+          <div class="feature-card">
+            <h4>🔄 Weekly Resets</h4>
+            <p>Your wallet resets every Monday, giving you permission to start fresh</p>
+          </div>
+        </div>
+
+        <h3>Core Philosophy</h3>
+        <p>We believe that:</p>
+        <ul>
+          <li><strong>Simplicity beats complexity</strong> - One dollar up or down is instantly clear</li>
+          <li><strong>Fresh starts matter</strong> - Your wallet resets every Monday</li>
+          <li><strong>Accountability works</strong> - You're 65% more likely to succeed with gentle peer support</li>
+          <li><strong>Progress over perfection</strong> - It's about building momentum, not being flawless</li>
+          <li><strong>Privacy is essential</strong> - No email required, anonymous usernames, secure rooms</li>
+        </ul>
+      </section>
+
+      <section id="getting-started-solo" class="section">
+        <h2>Getting Started Solo</h2>
+
+        <h3>First Visit Walkthrough</h3>
+        <ol class="step-list">
+          <li><strong>Room Creation Interface:</strong> You can create a new room, join an existing room, or click "Skip" to use the app solo</li>
+          <li><strong>Anonymous Account:</strong> We automatically create an anonymous account using a secure UUID - no email or personal information required</li>
+          <li><strong>Empty Wallet:</strong> Once you skip room creation or set up a room, you'll see the main wallet interface with $0 balance, action buttons ready for use, and access to focus area setup</li>
+        </ol>
+
+        <div class="screenshot-container">
+          <img src="screenshots/first-screen-interface.png" alt="First Screen Interface showing the create/join room interface with room code input, display name field, and action buttons" class="screenshot">
+          <p class="screenshot-caption">The initial create/join room interface - your entry point to Impulse Wallet</p>
+        </div>
+
+        <h3>Setting Up Focus Areas</h3>
+        <p><strong>Why Focus Areas Matter:</strong> Focus areas give your daily actions meaning and direction, but remember - they're completely private to you. Other room members can't see your specific focus areas, only your overall progress.</p>
+
+        <div class="examples">
+          <h4>Important: Actions Can Go Beyond Focus Areas</h4>
+          <p>Your deposits and withdrawals don't have to connect to your focus areas! If something positive happens in any area of life, give yourself credit. Examples:</p>
+          <ul>
+            <li>Choosing Michelob Ultra over a sugary margarita</li>
+            <li>NA beer instead of regular beer</li>
+            <li>Any conscious positive choice, even if it's not in your tracked areas</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>Available Focus Areas:</h4>
+          <ul>
+            <li><strong>Positive areas:</strong> Eat Healthy, Exercise, Gratitude</li>
+            <li><strong>Resistance areas:</strong> Scrolling, Snacking, Spending, Booze, Procrastination</li>
+            <li><strong>Custom areas:</strong> Add your own specific focus areas</li>
+          </ul>
+        </div>
+
+        <p><strong>How to Set Them:</strong></p>
+        <ol class="step-list">
+          <li>Click the "Weekly Focus" button in the header</li>
+          <li>Choose 2-3 areas from preset options or add custom ones</li>
+          <li>Click "Save"</li>
+        </ol>
+
+        <div class="screenshot-container">
+          <img src="screenshots/focus-area-selection.png" alt="Weekly focus picker modal showing checkboxes for various focus areas like Eat Healthy, Exercise, Scrolling, etc., with custom area input field" class="screenshot">
+          <p class="screenshot-caption">The weekly focus picker modal - choose 2-3 areas that matter to you this week</p>
+        </div>
+
+        <p><strong>Important:</strong> Focus areas lock for the week and reset every Monday at 12:01 AM. You can have up to 3 areas active at once.</p>
+
+        <h3>Making Your First Transactions</h3>
+
+        <div class="examples">
+          <h4>Deposit (+$1) Examples:</h4>
+          <ul>
+            <li>"Chose water over soda"</li>
+            <li>"10-minute walk"</li>
+            <li>"Resisted checking phone"</li>
+            <li>"Finished work task instead of procrastinating"</li>
+          </ul>
+        </div>
+
+        <div class="examples negative">
+          <h4>Withdrawal (-$1) Examples:</h4>
+          <ul>
+            <li>"Scrolled for 30 minutes"</li>
+            <li>"Ordered takeout instead of cooking"</li>
+            <li>"Skipped morning routine"</li>
+            <li>"Impulse bought coffee gadget"</li>
+          </ul>
+        </div>
+
+        <div class="examples warning">
+          <h4>15-Minute Grace Period</h4>
+          <p>Made a mistake? Click "Undo last (15 min)" to reverse your most recent transaction within 15 minutes.</p>
+        </div>
+
+        <div class="screenshot-container">
+          <img src="screenshots/main-wallet-interface.png" alt="Main wallet interface showing balance display, deposit and withdrawal buttons, focus areas section, and room leaderboard" class="screenshot">
+          <p class="screenshot-caption">The main wallet interface showing your balance, action buttons, focus areas, and room leaderboard</p>
+        </div>
+      </section>
+
+      <section id="virtual-wallet" class="section">
+        <h2>The Virtual Wallet System</h2>
+
+        <h3>How the Dollar System Works</h3>
+        <p><strong>Simple Decision Framework:</strong> Every choice becomes a simple question: "Is this a +$1 or -$1 moment?"</p>
+
+        <div class="examples">
+          <h4>The "Intentional Effort" Concept</h4>
+          <p>Every $1 should represent conscious effort, not routine habits. If something has become automatic and requires no effort (like intermittent fasting you've done for months), it doesn't earn a deposit. Focus on choices that require intentional decision-making.</p>
+        </div>
+
+        <div class="examples">
+          <h4>Logging Beyond Focus Areas</h4>
+          <p>Your deposits can come from ANY positive choice in life, not just your selected focus areas. Examples:</p>
+          <ul>
+            <li>Choosing a healthier drink option at dinner</li>
+            <li>Taking the stairs instead of elevator</li>
+            <li>Being kind to a difficult person</li>
+            <li>Any moment where you choose the better option</li>
+          </ul>
+        </div>
+
+        <h3>Balance & Streaks</h3>
+        <ul>
+          <li><strong>Your Balance:</strong> Starts at $0 each Monday, can go positive or negative, represents your overall momentum</li>
+          <li><strong>Streak Tracking:</strong> Consecutive deposits without withdrawals - withdrawals reset streaks but don't erase progress</li>
+          <li><strong>Focus:</strong> Streaks measure consistency, not perfection</li>
+        </ul>
+
+        <h3>Weekly Reset System</h3>
+        <p><strong>Every Monday at 12:01 AM:</strong></p>
+        <ul>
+          <li>Your balance returns to $0</li>
+          <li>Streaks reset</li>
+          <li>You can choose new focus areas</li>
+          <li>Fresh start with lessons learned</li>
+        </ul>
+
+        <p><strong>Why Weekly Resets Work:</strong> They prevent long-term shame spirals, allow for life's natural ups and downs, keep the system feeling fresh, and align with natural weekly rhythms.</p>
+      </section>
+
+      <section id="focus-areas" class="section">
+        <h2>Weekly Focus Areas</h2>
+
+        <h3>Choosing Effective Focus Areas</h3>
+
+        <div class="examples">
+          <h4>The 2-3 Rule</h4>
+          <p>Choose 2-3 areas maximum. More areas lead to decision fatigue and tracking overwhelm.</p>
+        </div>
+
+        <h3>Area Categories</h3>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Health & Wellness</h4>
+            <ul>
+              <li>Eat Healthy</li>
+              <li>Exercise</li>
+              <li>Sleep routine</li>
+              <li>Hydration</li>
+              <li>Meditation/mindfulness</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Productivity</h4>
+            <ul>
+              <li>Work focus</li>
+              <li>Procrastination resistance</li>
+              <li>Learning/reading</li>
+              <li>Organization</li>
+              <li>Digital boundaries</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Social & Emotional</h4>
+            <ul>
+              <li>Gratitude practice</li>
+              <li>Relationship building</li>
+              <li>Communication</li>
+              <li>Self-care</li>
+              <li>Stress management</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Financial</h4>
+            <ul>
+              <li>Spending control</li>
+              <li>Saving habits</li>
+              <li>Budget adherence</li>
+              <li>Impulse purchase resistance</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Custom Focus Areas</h3>
+        <div class="examples">
+          <h4>Good Custom Examples:</h4>
+          <ul>
+            <li>"Morning pages writing"</li>
+            <li>"Call family weekly"</li>
+            <li>"Meal prep Sunday"</li>
+            <li>"10 minutes tidying"</li>
+          </ul>
+        </div>
+
+        <div class="examples negative">
+          <h4>Avoid These:</h4>
+          <ul>
+            <li>Too vague: "Be better"</li>
+            <li>Too many areas at once</li>
+            <li>Overly complex requirements</li>
+          </ul>
+        </div>
+
+        <h3>Weekly Balance Strategy: The $20 Pattern</h3>
+
+        <div class="examples warning">
+          <h4>Understanding Your Balance Patterns</h4>
+          <p>Your weekly balance tells a story about your goals and self-expectations.</p>
+        </div>
+
+        <div class="examples negative">
+          <h4>If you're hitting +$20 every week:</h4>
+          <ul>
+            <li>Your goals might be too easy</li>
+            <li>You're not pushing yourself forward enough</li>
+            <li>Consider adding more challenging focus areas</li>
+            <li>Look for areas where you can stretch yourself</li>
+          </ul>
+        </div>
+
+        <div class="examples negative">
+          <h4>If you're hitting -$20 every week:</h4>
+          <ul>
+            <li>Re-evaluate your focus areas - you might be too hard on yourself</li>
+            <li>Consider if your areas are realistic for your current life situation</li>
+            <li>Add "quick hit" positive focus areas to balance challenging ones</li>
+            <li>Remember: progress over perfection</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>The Sweet Spot:</h4>
+          <p>Aim for a balance that fluctuates week to week, sometimes positive, sometimes negative, but always teaching you something about your patterns and growth edges.</p>
+        </div>
+
+        <h3>Focus Area Strategy: Quick Hits vs. Challenges</h3>
+
+        <div class="examples">
+          <h4>Balancing Your Focus Areas</h4>
+          <p>When struggling with challenging areas (like "eating healthy" where you might hit -$1 frequently), add "quick hit" positive areas to maintain momentum.</p>
+        </div>
+
+        <div class="examples">
+          <h4>Quick Hit Examples:</h4>
+          <ul>
+            <li>"Tell myself something I like about myself" (2-minute task, multiple times daily)</li>
+            <li>"Practice gratitude" (can be done anywhere, anytime)</li>
+            <li>"Take three deep breaths" (instant positive action)</li>
+            <li>"Send a kind text to someone" (quick, meaningful action)</li>
+            <li>"Drink a full glass of water" (simple health win)</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>Why Quick Hits Work:</h4>
+          <ul>
+            <li>They provide easy +$1 opportunities to balance out challenging areas</li>
+            <li>Build positive momentum when facing difficult behavior changes</li>
+            <li>Create successful patterns that support bigger goals</li>
+            <li>Prevent discouragement from repeatedly hitting -$1 on harder areas</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>Strategic Combinations:</h4>
+          <ul>
+            <li>Week with "Stop Scrolling" (-$1 heavy)? Add "Gratitude practice" (+$1 easy)</li>
+            <li>Week with "Exercise daily" (challenging)? Add "Morning affirmation" (achievable)</li>
+            <li>Week with "No impulse buying" (hard)? Add "Compliment someone" (simple)</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="creating-rooms" class="section">
+        <h2>Creating & Managing Rooms</h2>
+
+        <h3>Why Use Accountability Rooms?</h3>
+        <ul>
+          <li><strong>65% higher success rate</strong> when someone knows your goals</li>
+          <li><strong>Motivation through visibility</strong> without judgment</li>
+          <li><strong>Shared momentum</strong> when you see others succeeding</li>
+          <li><strong>Support system</strong> for tough moments</li>
+        </ul>
+
+        <h3>Creating Your First Room</h3>
+        <ol class="step-list">
+          <li><strong>Generate Room Code:</strong> Click "Create room" and enter your display name - the system generates a unique 5-letter code</li>
+          <li><strong>Configure Settings:</strong> Access "Room Settings" to set privacy (Open vs Invite Only) and member limits (10-100 members)</li>
+          <li><strong>Share Your Room:</strong> Share the room code and invite code (if invite-only) with others</li>
+        </ol>
+
+        <div class="screenshot-container">
+          <img src="screenshots/room-management.png" alt="Room creation and settings interface showing room code, privacy options, member limits, and current member list" class="screenshot">
+          <p class="screenshot-caption">The room creation and settings interface - configure privacy and member limits</p>
+        </div>
+
+        <h3>Room Creator Responsibilities</h3>
+        <p>As the room creator, you can:</p>
+        <ul>
+          <li>Change room settings (privacy, member limits)</li>
+          <li>View and manage the member list</li>
+          <li>Generate and share invite codes</li>
+          <li>Remove disruptive members (if necessary)</li>
+        </ul>
+      </section>
+
+      <section id="joining-rooms" class="section">
+        <h2>Joining Existing Rooms</h2>
+
+        <h3>How to Join a Room</h3>
+        <ol class="step-list">
+          <li><strong>Get Information:</strong> You'll need the 5-letter room code, your display name, and invite code (if room is invite-only)</li>
+          <li><strong>Join Process:</strong> Enter room code, display name, and invite code (if needed), then click "Join"</li>
+          <li><strong>Verification:</strong> System checks room exists, isn't full, invite code is correct, and name isn't taken</li>
+        </ol>
+
+        <h3>What Happens When You Join</h3>
+
+        <div class="screenshot-container">
+          <img src="screenshots/room-leaderboard.png" alt="Room leaderboard showing member rankings with balances, streaks, and current position highlighted" class="screenshot">
+          <p class="screenshot-caption">The room leaderboard showing member rankings, balances, and streaks - gentle accountability in action</p>
+        </div>
+
+        <ul>
+          <li>You'll see the room leaderboard with all members</li>
+          <li>Your progress becomes visible to room members</li>
+          <li>You can see others' balances and streaks (but not specific actions)</li>
+          <li>Only your display name and progress numbers are visible</li>
+          <li>Your focus areas are completely private - no one else can see what you're working on</li>
+          <li>You can leave at any time</li>
+        </ul>
+
+        <h3>Room Etiquette</h3>
+        <div class="examples">
+          <h4>Be Supportive:</h4>
+          <ul>
+            <li>Celebrate others' successes</li>
+            <li>Don't judge setbacks</li>
+            <li>Offer encouragement when appropriate</li>
+            <li>Respect different approaches</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="daily-usage" class="section">
+        <h2>Daily Usage & Best Practices</h2>
+
+        <h3>Building Your Daily Rhythm</h3>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Morning Setup (2 minutes)</h4>
+            <ul>
+              <li>Check your current balance</li>
+              <li>Review your focus areas</li>
+              <li>Set an intention for the day</li>
+              <li>Make your first deposit</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Throughout the Day</h4>
+            <ul>
+              <li>Log actions as they happen</li>
+              <li>Use the note field for context</li>
+              <li>Be honest about successes and slips</li>
+              <li>Remember: awareness, not perfection</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Evening Review (2 minutes)</h4>
+            <ul>
+              <li>Check your progress</li>
+              <li>Log any final actions</li>
+              <li>Reflect on what worked</li>
+              <li>Plan adjustments for tomorrow</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Effective Action Logging</h3>
+
+        <div class="examples">
+          <h4>Good Deposit Notes (Remember: Any positive choice counts!):</h4>
+          <ul>
+            <li>"20-minute walk after lunch"</li>
+            <li>"Chose salad over burger"</li>
+            <li>"Finished presentation instead of procrastinating"</li>
+            <li>"Meditated for 10 minutes"</li>
+            <li>"Chose NA beer over regular beer" (even if not in focus areas)</li>
+            <li>"Took stairs instead of elevator"</li>
+            <li>"Chose Michelob Ultra over sugary margarita"</li>
+            <li>"Helped coworker with project"</li>
+          </ul>
+        </div>
+
+        <div class="examples negative">
+          <h4>Good Withdrawal Notes:</h4>
+          <ul>
+            <li>"Scrolled Instagram for 45 minutes"</li>
+            <li>"Ordered pizza instead of cooking"</li>
+            <li>"Skipped workout because tired"</li>
+            <li>"Impulse bought coffee gadget"</li>
+            <li>"Was rude to customer service rep"</li>
+            <li>"Chose the less healthy option when I had a choice"</li>
+          </ul>
+        </div>
+
+        <div class="examples warning">
+          <h4>Remember the Intentional Effort Rule:</h4>
+          <ul>
+            <li>Only log things that required conscious effort</li>
+            <li>Routine habits that happen automatically don't count</li>
+            <li>Focus on moments of choice, not automatic behaviors</li>
+          </ul>
+        </div>
+
+        <p><strong>Why Notes Matter:</strong> They help you identify patterns, provide context for future reference, support self-reflection, and can be analyzed in your history.</p>
+      </section>
+
+      <section id="advanced" class="section">
+        <h2>Advanced Features</h2>
+
+        <h3>History & Analytics</h3>
+        <p><strong>Accessing Your History:</strong> Click "My History" button to choose your timeframe and review patterns.</p>
+
+        <div class="screenshot-container">
+          <img src="screenshots/history-modal.png" alt="History modal showing week summary, transaction timeline with deposits and withdrawals, and export functionality" class="screenshot">
+          <p class="screenshot-caption">The detailed history modal showing your progress patterns, transactions, and analytics</p>
+        </div>
+
+        <p><strong>Key Metrics:</strong></p>
+        <ul>
+          <li><strong>Total Entries:</strong> How actively you're tracking</li>
+          <li><strong>Current Balance:</strong> Your momentum this week</li>
+          <li><strong>Best Streak:</strong> Your longest consistent period</li>
+          <li><strong>Entry Patterns:</strong> When and how you typically log actions</li>
+        </ul>
+
+        <p><strong>Export Functionality:</strong> Click "📥 Export CSV" to download your data for analysis in spreadsheet software or to keep backup records.</p>
+
+        <h3>Progressive Focus Strategy</h3>
+
+        <div class="examples">
+          <h4>Week 1-2 (Beginner):</h4>
+          <ul>
+            <li>Exercise (any movement counts)</li>
+            <li>Gratitude (one thing daily)</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>Week 3-4 (Intermediate):</h4>
+          <ul>
+            <li>Exercise (30+ minutes)</li>
+            <li>Gratitude (3 things daily)</li>
+            <li>Procrastination resistance</li>
+          </ul>
+        </div>
+
+        <div class="examples">
+          <h4>Week 5+ (Advanced):</h4>
+          <ul>
+            <li>Specific exercise goals</li>
+            <li>Gratitude + acts of service</li>
+            <li>Deep work focus periods</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="troubleshooting" class="section">
+        <h2>Troubleshooting</h2>
+
+        <h3>Technical Issues</h3>
+
+        <div class="feature-card">
+          <h4>App Won't Load:</h4>
+          <ol>
+            <li>Clear browser cache and cookies</li>
+            <li>Try incognito/private browsing mode</li>
+            <li>Check internet connection</li>
+            <li>Try a different browser</li>
+            <li>Contact support if issue persists</li>
+          </ol>
+        </div>
+
+        <h3>Common User Issues</h3>
+
+        <div class="examples warning">
+          <h4>"I forgot to log something":</h4>
+          <p>Log it as soon as you remember, be honest about timing in the note, don't stress about perfect timing, and focus on building the habit of awareness.</p>
+        </div>
+
+        <div class="examples warning">
+          <h4>"My balance is negative":</h4>
+          <p>This is normal and expected! Focus on learning, not the number. Look for patterns in your withdrawals, plan strategies for common triggers, and remember: Monday brings a fresh start.</p>
+        </div>
+
+        <div class="examples warning">
+          <h4>"I keep forgetting to track":</h4>
+          <p>Set phone reminders for morning and evening, link tracking to existing habits (meals, commute), start with just morning and evening logging, and use the note field to capture multiple actions at once.</p>
+        </div>
+      </section>
+
+      <section id="success-tips" class="section">
+        <h2>Tips for Success</h2>
+
+        <h3>Week 1: Foundation Building</h3>
+
+        <div class="examples">
+          <h4>Your First Week Goals:</h4>
+          <ul>
+            <li>✅ Log something every day (even if it's a withdrawal)</li>
+            <li>✅ Choose 1-2 manageable focus areas</li>
+            <li>✅ Use the note field to capture context</li>
+            <li>✅ Experience the weekly reset on Monday</li>
+          </ul>
+        </div>
+
+        <p><strong>Mindset for Week 1:</strong></p>
+        <ul>
+          <li><strong>Curiosity over judgment:</strong> You're learning about your patterns</li>
+          <li><strong>Consistency over intensity:</strong> Daily logging matters more than big actions</li>
+          <li><strong>Experimentation:</strong> Try different times of day for logging</li>
+          <li><strong>Patience:</strong> The habit of tracking is more important than perfect tracking</li>
+        </ul>
+
+        <h3>Building Long-Term Success</h3>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>Month 1: Habit Formation</h4>
+            <ul>
+              <li>Focus on consistent daily logging</li>
+              <li>Learn your patterns and triggers</li>
+              <li>Experiment with different focus areas</li>
+              <li>Build comfort with the system</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Month 2: Optimization</h4>
+            <ul>
+              <li>Refine your focus area choices</li>
+              <li>Develop strategies for challenges</li>
+              <li>Consider joining or creating a room</li>
+              <li>Start analyzing your history</li>
+            </ul>
+          </div>
+          <div class="feature-card">
+            <h4>Month 3+: Integration</h4>
+            <ul>
+              <li>Impulse Wallet becomes natural</li>
+              <li>Use insights for meaningful changes</li>
+              <li>Help others get started</li>
+              <li>Customize to match evolving goals</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>Remember: You've Got This!</h3>
+
+        <div class="examples">
+          <h4>Core Principles to Remember:</h4>
+          <ul>
+            <li><strong>Progress over perfection:</strong> Every entry is valuable data</li>
+            <li><strong>Curiosity over judgment:</strong> You're learning about yourself</li>
+            <li><strong>Consistency over intensity:</strong> Daily tracking beats perfect balance</li>
+            <li><strong>Growth over guilt:</strong> Withdrawals are learning opportunities, not failures</li>
+          </ul>
+        </div>
+      </section>
+
+      <div style="text-align: center; margin: 3rem 0;">
+        <a href="/" class="back-to-app">← Back to Impulse Wallet</a>
+        <p style="color: #666; font-style: italic; margin-top: 1rem;">
+          Remember: Impulse Wallet is about building self-trust through awareness and gentle accountability.
+          Every entry is progress, every week is a fresh start, and every choice is an opportunity to strengthen
+          the promises you make to yourself.
+        </p>
+        <p style="color: #667eea; font-weight: 600; font-size: 1.1rem;">
+          Ready to transform your self-control into a game you actually want to play? Start with one focus area and one honest entry. You've got this! 🎯
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

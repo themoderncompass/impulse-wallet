@@ -1,0 +1,22 @@
+# Screenshots Directory
+
+This directory contains screenshots used in the onboarding guide to help users understand the interface and key functionality.
+
+## Screenshot Guidelines
+
+- Use descriptive filenames (e.g., 'main-wallet-interface.png', 'room-creation-form.png')
+- Optimize images for web (appropriate file sizes)
+- Include proper alt text for accessibility
+- Ensure mobile responsiveness for the images
+- Take clean, representative screenshots that reduce cognitive load
+
+## Current Screenshots
+
+Screenshots will be organized by interface section:
+- first-screen/
+- room-creation/
+- main-wallet/
+- focus-areas/
+- leaderboard/
+- settings/
+- history/

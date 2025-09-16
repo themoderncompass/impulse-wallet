@@ -1742,6 +1742,17 @@ main.container {
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
+/* Ensure links with header-btn class look identical to buttons */
+a.header-btn {
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+}
+
+a.header-btn:visited {
+  color: white;
+}
+
 .wallet-balance-row {
   display: flex;
   align-items: center;
