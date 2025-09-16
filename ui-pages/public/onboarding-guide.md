@@ -8,7 +8,7 @@
 
 ### 🚀 **First Visit? Start Here!**
 
-1. **Join or Create Room** - The first screen you'll see! Connect with others for accountability, or click "Skip" to go solo
+1. **Join or Create Room** - The first screen you'll see! Connect with others for accountability or create a new room and set it to invite-only for solo use
 2. **No Signup Required** - Just open the app and you're ready to go with your anonymous account
 3. **Choose Focus Areas** - Click "Weekly Focus" to pick 2-3 areas for this week (these are private to you - others can't see your specific areas)
 4. **Start Tracking** - Use +$1 for good choices, -$1 for slips - actions can be inside OR outside your focus areas
@@ -62,7 +62,7 @@ We believe that:
 When you first visit, you'll see the main interface with options to:
 - Create a new room for group accountability
 - Join an existing room with a room code
-- Click "Skip" to use the app solo without a room
+- Create a new room and set it to invite-only if you want to use the app by yourself
 
 ![First Screen Interface](screenshots/first-screen-interface.png)
 *The initial create/join room interface - your entry point to Impulse Wallet*
@@ -70,11 +70,11 @@ When you first visit, you'll see the main interface with options to:
 **Step 2: Anonymous Account Creation**
 Behind the scenes, we automatically create an anonymous account for you using:
 - A secure UUID stored in your browser
-- No email or personal information required
+- No email required - you can use any display name you prefer (real name or pseudonym)
 - All your data stays with this anonymous ID
 
 **Step 3: Your Empty Wallet**
-Once you skip room creation or set up a room, you'll see the main wallet interface with:
+Once you set up or join a room, you'll see the main wallet interface with:
 - **$0 balance** - Fresh start!
 - **No focus areas** - You can set these up by clicking "Weekly Focus"
 - **Action buttons** - Ready for deposits (+$1) and withdrawals (-$1)
