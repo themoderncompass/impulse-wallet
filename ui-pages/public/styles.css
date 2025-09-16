@@ -1010,14 +1010,17 @@ th, td {
   .container {
     margin: 0.5rem auto !important;
     padding: 0 0.5rem !important;
-    max-height: 100vh;
+    min-height: 100vh;
     overflow-x: hidden;
+    overflow-y: auto;
   }
 
   body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
   }
 
   /* HEADER - MINIMAL SPACING */
@@ -1326,8 +1329,9 @@ th, td {
   /* Fix modal form scrolling specifically */
   .modal #focus-form {
     max-height: 60vh !important;
-    overflow-y: scroll !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
     padding-bottom: 20px !important;
   }
 
@@ -1421,19 +1425,21 @@ main.container {
   min-height: 60px;
 }
 
-/* MOBILE VIEWPORT HEIGHT CONSTRAINTS */
+/* MOBILE VIEWPORT HEIGHT CONSTRAINTS - Fixed for scroll issues */
 @media (max-width: 768px) {
   html, body {
     height: 100vh;
     height: 100dvh; /* Use dynamic viewport height on supported browsers */
-    overflow: hidden;
+    overflow-x: hidden; /* Only hide horizontal overflow */
+    overflow-y: auto; /* Allow vertical scrolling */
   }
 
   main.container {
-    max-height: calc(100vh - 50px);
-    max-height: calc(100dvh - 50px);
+    min-height: calc(100vh - 50px);
+    min-height: calc(100dvh - 50px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain; /* Prevent scroll chaining */
   }
 
   .site-footer {
@@ -1442,10 +1448,11 @@ main.container {
 
   /* ENSURE PLAY SECTION FITS IN VIEWPORT */
   #play {
-    max-height: calc(100vh - 100px);
-    max-height: calc(100dvh - 100px);
+    min-height: calc(100vh - 100px);
+    min-height: calc(100dvh - 100px);
     overflow-y: auto;
     padding-bottom: 1rem;
+    overscroll-behavior: contain; /* Prevent scroll chaining */
   }
 }
 
