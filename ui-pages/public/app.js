@@ -210,6 +210,7 @@ async function playSfx(kind) {
 const $ = (sel) => document.querySelector(sel);
 const el = {
   name: $("#name"),
+  roomCode: $("#room-code"),
   inviteCode: $("#invite-code"),
   create: $("#create"),
   join: $("#join"),
@@ -636,7 +637,13 @@ async function refresh() {
 async function createRoom() {
   try {
     displayName = (el.name.value || "").trim();
-    const code = genCode(); // Always generate new room code
+    if (!displayName) throw new Error("Enter your display name");
+
+    // Get room code from input or auto-generate
+    let code = (el.roomCode.value || "").trim().toUpperCase();
+    if (!code) {
+      code = genCode(); // Auto-generate if empty
+    }
 
     // Ensure we have a UUID at call time
     const uuid = currentUserId || getUserId();
@@ -676,18 +683,31 @@ async function createRoom() {
 
 async function doJoin() {
   try {
-    // We now only use invite code - room code is derived from invite code or handled by backend
     displayName = (el.name.value || "").trim();
+    if (!displayName) throw new Error("Enter your display name");
+
+    // Get both room code and invite code
+    const inputRoomCode = (el.roomCode.value || "").trim().toUpperCase();
     const inviteCode = (el.inviteCode.value || "").trim().toUpperCase();
-    if (!inviteCode || !displayName) throw new Error("Enter invite code and display name");
+
+    // Must have either room code OR invite code
+    if (!inputRoomCode && !inviteCode) {
+      throw new Error("Enter either a room name or an invite code");
+    }
 
     const uuid = currentUserId || getUserId();
     if (!uuid) throw new Error("Missing UUID; reload and try again.");
 
-    // Use special placeholder room code for invite-only joins
-    // Backend will look up actual room code from invite code
-    roomCode = "INVITE";
-    const payload = { roomCode, displayName, userId: uuid, inviteCode };
+    // Determine which flow to use
+    if (inviteCode) {
+      // Use invite code flow (private room)
+      roomCode = "INVITE";
+      var payload = { roomCode, displayName, userId: uuid, inviteCode };
+    } else {
+      // Use room code flow (public room)
+      roomCode = inputRoomCode;
+      var payload = { roomCode, displayName, userId: uuid };
+    }
     console.debug("POST /room payload:", payload);
 
     const result = await api("/room", {

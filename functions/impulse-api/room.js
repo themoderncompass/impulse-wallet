@@ -148,10 +148,9 @@ export const onRequestPost = async ({ request, env }) => {
     const userId = (body?.userId || "").trim();
     const providedInviteCode = (body?.inviteCode || "").trim().toUpperCase();
 
-    // Allow empty room code for auto-generation when creating new rooms
-    // Require either a room code or invite code for joining
-    if (!roomCode && !providedInviteCode && !displayName) {
-      return json({ error: "roomCode or inviteCode required" }, 400);
+    // Always require displayName for room operations
+    if (!displayName) {
+      return json({ error: "Display name is required" }, 400);
     }
 
     // Handle different room code scenarios
