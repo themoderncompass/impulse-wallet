@@ -8,7 +8,7 @@ async function ensureSchema(env) {
       code TEXT PRIMARY KEY,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       is_locked INTEGER DEFAULT 0,
-      invite_only INTEGER DEFAULT 0,
+      invite_only INTEGER DEFAULT 1,
       created_by TEXT,
       max_members INTEGER DEFAULT 50
     )
@@ -137,13 +137,40 @@ export async function onRequestPost({ request, env }) {
       }, 403);
     }
     
+    // Generate invite code for room if it doesn't have one and we're setting invite_only
+    let needsInviteCode = false;
+    if (inviteOnly === true) {
+      const currentRoom = await env.DB.prepare(`
+        SELECT invite_code FROM rooms WHERE code = ?
+      `).bind(roomCode).first();
+
+      if (!currentRoom?.invite_code) {
+        needsInviteCode = true;
+      }
+    }
+
     // Build update query dynamically based on provided fields
     const updates = [];
     const values = [];
-    
+
     if (typeof inviteOnly === 'boolean') {
       updates.push('invite_only = ?');
       values.push(inviteOnly ? 1 : 0);
+    }
+
+    if (needsInviteCode) {
+      // Generate a random invite code (8 characters, alphanumeric)
+      const generateInviteCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        for (let i = 0; i < 8; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+      };
+
+      updates.push('invite_code = ?');
+      values.push(generateInviteCode());
     }
     
     if (typeof maxMembers === 'number' && maxMembers > 0 && maxMembers <= 200) {
@@ -170,10 +197,10 @@ export async function onRequestPost({ request, env }) {
     
     // Get updated room info
     const updatedRoom = await env.DB.prepare(`
-      SELECT code, created_at, invite_only, created_by, max_members
+      SELECT code, created_at, invite_only, created_by, max_members, invite_code
       FROM rooms WHERE code = ?
     `).bind(roomCode).first();
-    
+
     return json({
       ok: true,
       room: {
@@ -181,7 +208,8 @@ export async function onRequestPost({ request, env }) {
         createdAt: updatedRoom.created_at,
         inviteOnly: !!updatedRoom.invite_only,
         createdBy: updatedRoom.created_by,
-        maxMembers: updatedRoom.max_members
+        maxMembers: updatedRoom.max_members,
+        inviteCode: updatedRoom.invite_code
       }
     });
     

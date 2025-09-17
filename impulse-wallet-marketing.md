@@ -9,15 +9,15 @@
 **The first habit tracker that makes accountability fun, not stressful**
 
 ### Value Proposition
-Stop struggling alone with willpower. Impulse Wallet turns your self-control into a simple, gamified experience where every good choice earns you a virtual dollar and every slip costs you one. Join accountability rooms with friends, family, or colleagues and watch your habits transform through the power of gentle peer support.
+Stop struggling alone with willpower. Impulse Wallet turns your self-control into a simple, gamified experience where every good choice earns you a virtual point (+$1) and every slip costs you one (-$1). Join accountability rooms with friends, family, or colleagues and watch your habits transform through the power of gentle peer support.
 
 ---
 
 ## Key Features & Benefits
 
 ### 🎮 **Gamified Self-Control**
-- **What it does**: Track positive actions as +$1 "deposits" and impulses as -$1 "withdrawals"
-- **Why it matters**: Complex habit tracking fails because it's overwhelming. A simple dollar system makes every choice clear and instantly rewarding.
+- **What it does**: Track positive actions as +$1 "deposits" and impulses as -$1 "withdrawals" (virtual points only)
+- **Why it matters**: Complex habit tracking fails because it's overwhelming. A simple point system makes every choice clear and instantly rewarding.
 
 ### 👥 **Social Accountability Rooms**
 - **What it does**: Create private groups with invite codes where members see each other's progress
@@ -87,13 +87,13 @@ Parents and teens working on household routines, study habits, or screen time ma
 ## Competitive Advantages
 
 ### **Simplicity Over Complexity**
-While other habit trackers require choosing categories, setting reminders, and managing complex interfaces, Impulse Wallet reduces every decision to a simple question: "Did this help me (+$1) or hurt me (-$1)?"
+While other habit trackers require choosing categories, setting reminders, and managing complex interfaces, Impulse Wallet reduces every decision to a simple question: "Did this help me (+$1 point) or hurt me (-$1 point)?"
 
 ### **Social Without Exposure**
 Unlike social media-style habit apps that broadcast your failures, Impulse Wallet creates intimate accountability circles where progress is shared but privacy is protected.
 
 ### **Instant Gratification**
-The virtual wallet system provides immediate positive feedback for good choices, leveraging the same psychological triggers that make games addictive but directing them toward positive outcomes.
+The virtual point system provides immediate positive feedback for good choices, leveraging the same psychological triggers that make games addictive but directing them toward positive outcomes.
 
 ### **Forgiveness Built-In**
 Weekly resets and undo features acknowledge that humans aren't perfect, reducing the shame spiral that destroys most habit-building efforts.

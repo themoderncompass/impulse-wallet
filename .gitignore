@@ -34,3 +34,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .mcp.json
+
+# Test files (temporary)
+test-*.js
+.wrangler/state/v3/d1/miniflare-D1DatabaseObject/11befb9c475f7855da7724f9d3d9b1bf33ddfeecb7536ecde185ba17d400e2e9.sqlite

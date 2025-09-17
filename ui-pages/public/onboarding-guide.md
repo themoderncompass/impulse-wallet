@@ -8,12 +8,29 @@
 
 ### 🚀 **First Visit? Start Here!**
 
-1. **Join or Create Room** - The first screen you'll see! Connect with others for accountability or create a new room and set it to invite-only for solo use
+1. **Join or Create Room** - The first screen you'll see! Either create your own room with a custom name (like "FAMILY" or "WORK") or join someone's existing room using their invite code (all rooms are private by default for your security)
 2. **No Signup Required** - Just open the app and you're ready to go with your anonymous account
 3. **Choose Focus Areas** - Click "Weekly Focus" to pick 2-3 areas for this week (these are private to you - others can't see your specific areas)
 4. **Start Tracking** - Use +$1 for good choices, -$1 for slips - actions can be inside OR outside your focus areas
+   ⚠️ **IMPORTANT:** These are virtual points, not real money
 
 **Ready to dive deeper?** Continue reading for the complete experience.
+
+### 🔑 Quick Start: Two Ways to Begin
+
+**Option 1: Create Your Own Room**
+- Enter a memorable name in "🏠 Room Name (yours)" field (like "FAMILY", "WORK", "GYM")
+- Add your display name
+- Click "Create room"
+- Share your generated invite code with trusted people
+
+**Option 2: Join Someone's Room**
+- Leave the room name field empty
+- Enter their invite code in "🔑 Invite Code (theirs)" field
+- Add your display name
+- Click "Join"
+
+**Security Note:** All rooms are private by default - only people with invite codes can join.
 
 ---
 
@@ -50,7 +67,7 @@ We believe that:
 - **Fresh starts matter** - Your wallet resets every Monday
 - **Accountability works** - You're 65% more likely to succeed with gentle peer support
 - **Progress over perfection** - It's about building momentum, not being flawless
-- **Privacy is essential** - No email required, anonymous usernames, secure rooms
+- **Privacy is essential** - No email required, anonymous usernames, all rooms private by default for your security and peace of mind
 
 ---
 
@@ -58,11 +75,12 @@ We believe that:
 
 ### First Visit Walkthrough
 
-**Step 1: Room Creation Interface**
-When you first visit, you'll see the main interface with options to:
-- Create a new room for group accountability
-- Join an existing room with a room code
-- Create a new room and set it to invite-only if you want to use the app by yourself
+**Step 1: Room Creation/Joining Interface**
+When you first visit, you'll see the main interface with two key fields:
+- **🏠 Room Name (yours)**: Choose a memorable name for your room like "FAMILY", "WORK", or "GYM" (or leave empty for auto-generated)
+- **🔑 Invite Code (theirs)**: Enter the invite code someone shared with you to join their existing room
+
+You can either create your own private room OR join someone else's room - the interface handles both seamlessly.
 
 ![First Screen Interface](screenshots/first-screen-interface.png)
 *The initial create/join room interface - your entry point to Impulse Wallet*
@@ -307,64 +325,86 @@ When struggling with challenging areas (like "eating healthy" where you might hi
 - **Motivation through visibility** without judgment
 - **Shared momentum** when you see others succeeding
 - **Support system** for tough moments
+- **Private, trusted spaces** where you feel safe to be vulnerable about your growth
 
 ### Creating Your First Room
 
-**Step 1: Generate Room Code**
-1. In the main interface, click "Create room"
+**Step 1: Create Your Private Room**
+1. In the main interface, enter a memorable room name in the "🏠 Room Name (yours)" field (like "FAMILY", "WORK", "GYM") or leave empty for auto-generated
 2. Enter your display name (this is what others will see)
-3. The system generates a unique 5-letter room code
+3. Click "Create room"
+4. The system automatically generates a secure 8-character invite code for your room
+5. Your room is **automatically private by default** - only people with your invite code can join
 
-**Step 2: Configure Room Settings**
-As the room creator, you can access "Room Settings" to configure:
+**Why Privacy Matters:**
+Your accountability space should feel safe and trusted. By making rooms private by default, we ensure only people you specifically invite can see your progress and participate in your journey.
+
+**Step 2: Share Your Secure Room**
+As the room creator, you can access "Room Settings" to manage your private room and share access with trusted people:
 
 ![Room Creation Flow](screenshots/room-management.png)
-*The room creation and settings interface - configure privacy and member limits*
+*The room creation and settings interface - private by default with "Make Public" option and member limits*
 
 **Privacy Options:**
-- **Open Room**: Anyone with the code can join
-- **Invite Only**: Requires an additional 8-character invite code
+- **Private Room** (Default): Requires both room code and invite code for secure access
+- **Make Public**: You can choose to make your room public, allowing anyone with just the room code to join
 
 **Member Management:**
 - **Member Limit**: Choose from 10, 25, 50, or 100 members
 - **Member List**: See who's in your room
 - **Remove Members**: If needed (as room creator)
 
-**Step 3: Share Your Room**
-- **Room Code**: Share the 5-letter code with others
-- **Invite Code**: If invite-only, share the 8-character invite code
-- **Copy Function**: Use the copy button in Room Settings
+**Step 3: Share Access Securely**
+- **Room Name**: Your memorable room name (e.g., "FAMILY") that others will use to identify your room
+- **Invite Code**: Your unique 8-character security code that grants access to your private room
+- **Copy Function**: Use the copy button in Room Settings to share your invite code securely
+- **Stay Private**: Keep your room private for maximum security and trust (recommended)
+- **Optional**: You can choose "Make Public" later if you want open access, but private is safer
 
 ### Room Creator Responsibilities
 
 **As the room creator, you can:**
-- Change room settings (privacy, member limits)
+- Manage your private room settings (member limits, "Make Public" option)
 - View and manage the member list
-- Generate and share invite codes
+- Share your unique invite code with trusted people
 - Remove disruptive members (if necessary)
+- Enjoy peace of mind knowing your room is private by default
+
+**Understanding the Two Roles:**
+- **Creating a room**: Use the "🏠 Room Name (yours)" field to make your own space
+- **Joining a room**: Use the "🔑 Invite Code (theirs)" field to enter someone else's space
 
 **Best Practices for Room Creators:**
+- Your room starts private by default - share your invite code only with trusted people
 - Set clear expectations for the group
-- Choose appropriate privacy settings
+- Only choose "Make Public" if you want open access (private is recommended)
 - Be an active, positive participant
 - Foster a supportive, non-judgmental environment
+- Clearly explain to joiners: "Use my invite code in the invite code field, leave the room name field empty"
 
 ### Room Privacy & Security
+
+**Privacy by Default:**
+All new rooms are automatically private, requiring both codes for access. This protects your privacy and ensures only trusted people can join your accountability space.
 
 **Room Code System:**
 - **5-letter room codes** (e.g., "ABCDE")
 - Generated randomly and checked for uniqueness
 - Case-insensitive for easy sharing
+- Required for all room access
 
 **Invite Code System:**
-- **8-character alphanumeric codes** for invite-only rooms
-- Additional security layer beyond room code
-- Regenerated if needed
+- **8-character alphanumeric codes** automatically generated for every room
+- Essential security layer that makes rooms private by default
+- Provides secure sharing with trusted individuals
+- Can be regenerated if compromised
 
 **Data Privacy:**
 - Only display names are visible to room members
 - No personal information shared
 - Each user maintains their anonymous UUID
+- Private-by-default rooms ensure your accountability space stays trusted and secure
+- You control exactly who has access to your progress through invite codes
 
 ---
 
@@ -373,23 +413,27 @@ As the room creator, you can access "Room Settings" to configure:
 ### How to Join a Room
 
 **Step 1: Get Room Information**
-From the room creator or member, you'll need:
-- **Room Code** (always required): 5-letter code
-- **Invite Code** (if room is invite-only): 8-character code
+From the room creator, you'll need:
+- **Room Name**: Their memorable room name (e.g., "FAMILY", "WORK", "GYM")
+- **Invite Code**: Their unique 8-character security code
 - **Your Display Name**: What others will see (can be anonymous)
 
+*Note: All rooms are private by default, so you'll always need their invite code for secure access.*
+
 **Step 2: Join Process**
-1. Enter the room code in the "Room code" field
-2. Enter your preferred display name
-3. If the room is invite-only, enter the invite code
+1. Leave the "🏠 Room Name (yours)" field **empty** (this is for creating your own room)
+2. Enter the room creator's **invite code** in the "🔑 Invite Code (theirs)" field
+3. Enter your preferred display name
 4. Click "Join"
+
+**Important**: When joining someone's room, only use the invite code field. The room name field is for creating your own room.
 
 **Step 3: Verification**
 The system checks:
-- Room exists and isn't full
-- Invite code is correct (if required)
+- The invite code is valid and matches an existing room
+- Room isn't full (respects member limits)
 - Display name isn't already taken in that room
-- All requirements are met
+- All security requirements are met for safe room access
 
 ### What Happens When You Join
 
@@ -408,6 +452,8 @@ The system checks:
 - Your focus areas are completely private - no one else can see what you're working on
 - Your real identity stays anonymous
 - You can leave at any time
+- **Private rooms by default** mean only invited people can see your progress
+- **Secure invite codes** prevent uninvited access to your accountability space
 
 ### Room Etiquette
 
@@ -592,7 +638,8 @@ The system checks:
 - Contact support with your approximate join date for recovery attempts
 
 **Room Issues:**
-- **Can't join room**: Check room code spelling, ask for invite code if needed
+- **Can't join room**: Verify you're using the correct invite code in the "🔑 Invite Code (theirs)" field and leaving the room name field empty
+- **Using wrong field**: Remember - room name field is for creating your own room, invite code field is for joining others
 - **Room disappeared**: Contact room creator, they may have changed settings
 - **Wrong display name**: Leave and rejoin with correct name
 - **Duplicate names**: Choose a slightly different variation

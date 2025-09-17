@@ -235,6 +235,13 @@ button.bad  { background: #d33; color: #fff; border-color: #c22 }
 
 .banner.banner-loss { background: #fff4f4 }
 
+.virtual-disclaimer {
+  text-align: center;
+  margin-top: 0.5rem;
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -1010,16 +1017,13 @@ th, td {
   .container {
     margin: 0.5rem auto !important;
     padding: 0 0.5rem !important;
-    min-height: 100vh;
     overflow-x: hidden;
-    overflow-y: auto;
   }
 
   body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    overflow-y: auto;
     position: relative;
   }
 
@@ -1274,8 +1278,17 @@ th, td {
   .site-footer {
     margin-top: 0.5rem !important;
     padding: 0.25rem 0 !important;
-    font-size: 9px !important;
+    font-size: 0.8rem !important;
     min-height: 35px !important;
+  }
+
+  .site-footer .link-like {
+    font-size: 0.8rem !important;
+  }
+
+  /* Modern Compass should match other footer links on mobile */
+  .site-footer a[href*="themoderncompass.io"] {
+    font-size: 0.8rem !important;
   }
 
   .site-footer .legal-links {
@@ -1427,32 +1440,37 @@ main.container {
 
 /* MOBILE VIEWPORT HEIGHT CONSTRAINTS - Fixed for scroll issues */
 @media (max-width: 768px) {
-  html, body {
-    height: 100vh;
-    height: 100dvh; /* Use dynamic viewport height on supported browsers */
-    overflow-x: hidden; /* Only hide horizontal overflow */
-    overflow-y: auto; /* Allow vertical scrolling */
+  html {
+    overflow-x: hidden;
+    height: auto; /* Allow natural height expansion */
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh; /* Minimum full height */
+    min-height: 100dvh; /* Use dynamic viewport height where supported */
+    height: auto; /* Allow natural expansion */
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    scroll-behavior: smooth; /* Smooth scrolling */
   }
 
   main.container {
-    min-height: calc(100vh - 50px);
-    min-height: calc(100dvh - 50px);
-    overflow-y: auto;
+    overflow-y: visible; /* Let natural scrolling work */
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain; /* Prevent scroll chaining */
+    padding-bottom: 2rem; /* Ensure footer clearance */
+    flex: 1 0 auto; /* Allow proper flex growth */
+    min-height: 0; /* Allow flex child to shrink */
   }
 
   .site-footer {
     min-height: 35px;
   }
 
-  /* ENSURE PLAY SECTION FITS IN VIEWPORT */
+  /* ENSURE PLAY SECTION IS SCROLLABLE */
   #play {
-    min-height: calc(100vh - 100px);
-    min-height: calc(100dvh - 100px);
-    overflow-y: auto;
-    padding-bottom: 1rem;
-    overscroll-behavior: contain; /* Prevent scroll chaining */
+    overflow-y: visible;
+    padding-bottom: 2rem;
   }
 }
 
@@ -1696,6 +1714,25 @@ main.container {
   .note-clear {
     min-height: 44px;
     min-width: 44px;
+  }
+}
+
+/* Field Help Text Styling */
+.field-help {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  line-height: 1.3;
+  font-style: italic;
+}
+
+.field-help.focus-help {
+  color: #8b5cf6;
+}
+
+@media (max-width: 768px) {
+  .field-help {
+    font-size: 0.75rem;
   }
 }
 

@@ -209,8 +209,8 @@ async function playSfx(kind) {
 // --- dom refs ---
 const $ = (sel) => document.querySelector(sel);
 const el = {
-  room: $("#room"),
   name: $("#name"),
+  roomCode: $("#room-code"),
   inviteCode: $("#invite-code"),
   create: $("#create"),
   join: $("#join"),
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   roomCode = s.roomCode;
   displayName = s.displayName || '';
 
-  if (el.room) el.room.value = roomCode;
+  // Room code field removed - now using invite code only
   if (el.name) el.name.value = displayName;
 
   // show Play UI
@@ -356,15 +356,16 @@ function show(msg, isLoss = false) {
   // Also show as modern notification
   showNotification(msg, isLoss ? 'error' : 'success');
 }
-// Normalize timestamps coming from API (UTC) into Date objects in user's local time.
+// Normalize timestamps coming from API into Date objects in user's local time.
 // - Epoch numbers: new Date(number)
 // - ISO strings with Z/offset: new Date(ts)
-// - Naïve "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS": treat as UTC
+// - Naïve "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS": treat as UTC (from SQLite CURRENT_TIMESTAMP)
 function parseTS(ts) {
   if (ts == null) return null;
   if (typeof ts === "number") return new Date(ts);
   if (typeof ts === "string") {
     if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(ts)) {
+      // SQLite CURRENT_TIMESTAMP returns UTC time as naive string - treat as UTC
       return new Date(ts.replace(" ", "T") + "Z");
     }
     return new Date(ts);
@@ -636,8 +637,13 @@ async function refresh() {
 async function createRoom() {
   try {
     displayName = (el.name.value || "").trim();
-    const proposed = (el.room.value || "").trim().toUpperCase();
-    const code = proposed || genCode();
+    if (!displayName) throw new Error("Enter your display name");
+
+    // Get room code from input or auto-generate
+    let code = (el.roomCode.value || "").trim().toUpperCase();
+    if (!code) {
+      code = genCode(); // Auto-generate if empty
+    }
 
     // Ensure we have a UUID at call time
     const uuid = currentUserId || getUserId();
@@ -652,7 +658,6 @@ async function createRoom() {
     });
 
     roomCode = code;
-    el.room.value = roomCode;
 
     saveSession(roomCode, displayName);
 
@@ -678,25 +683,33 @@ async function createRoom() {
 
 async function doJoin() {
   try {
-    roomCode = (el.room.value || "").trim().toUpperCase();
     displayName = (el.name.value || "").trim();
+    if (!displayName) throw new Error("Enter your display name");
+
+    // Get both room code and invite code
+    const inputRoomCode = (el.roomCode.value || "").trim().toUpperCase();
     const inviteCode = (el.inviteCode.value || "").trim().toUpperCase();
-    if (!roomCode || !displayName) throw new Error("Enter room code and display name");
+
+    // Join requires invite code
+    if (!inviteCode) {
+      throw new Error("Enter an invite code to join a room");
+    }
 
     const uuid = currentUserId || getUserId();
     if (!uuid) throw new Error("Missing UUID; reload and try again.");
 
-    const payload = { roomCode, displayName, userId: uuid };
-    if (inviteCode) {
-      payload.inviteCode = inviteCode;
-    }
+    // Use invite code flow (private room)
+    roomCode = "INVITE";
+    var payload = { roomCode, displayName, userId: uuid, inviteCode };
     console.debug("POST /room payload:", payload);
 
-    await api("/room", {
+    const result = await api("/room", {
       method: "POST",
       body: JSON.stringify(payload)
     });
 
+    // Use the actual room code returned by the server (important for invite-code-only joins)
+    roomCode = result.room?.code || roomCode;
     saveSession(roomCode, displayName);
 
     document.querySelector(".join")?.classList.add("hidden");
@@ -715,6 +728,10 @@ async function doJoin() {
     const msg = String(e.message || "");
     if (msg.includes("DUPLICATE_NAME") || e.status === 409) {
       alert("That display name is already taken in this room. Please choose another.");
+      return;
+    }
+    if (msg.includes("ROOM_NOT_FOUND") || msg.includes("Invalid invite code") || e.status === 404) {
+      alert("That room doesn't exist or the invite code is invalid. Please check the invite code.");
       return;
     }
     console.error(e);
@@ -1433,7 +1450,7 @@ function initHistoryModal() {
   
   function formatTimestamp(timestamp) {
     try {
-      const date = new Date(timestamp);
+      const date = parseTS(timestamp);
       return date.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -1580,8 +1597,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (data.ok) {
         // Update UI with current settings
         document.getElementById('room-code-display').textContent = data.room.code;
-        // Room locking removed - only invite-only mode supported
-        document.getElementById('room-invite-only').checked = data.room.inviteOnly;
+        // Checkbox is now "Make Public" so invert the inviteOnly value
+        document.getElementById('room-invite-only').checked = !data.room.inviteOnly;
         document.getElementById('room-max-members').value = data.room.maxMembers;
         document.getElementById('member-count').textContent = data.memberCount;
         document.getElementById('invite-code-value').value = data.room.inviteCode || '—';
@@ -1612,8 +1629,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const settings = {
         roomCode,
         userId: currentUserId,
-        // isLocked removed - only invite-only mode supported
-        inviteOnly: document.getElementById('room-invite-only').checked,
+        // Checkbox is now "Make Public" so invert the value for inviteOnly
+        inviteOnly: !document.getElementById('room-invite-only').checked,
         maxMembers: parseInt(document.getElementById('room-max-members').value)
       };
       
@@ -1673,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Global utility function for formatting timestamps
 window.formatTimestamp = function(timestamp) {
   try {
-    const date = new Date(timestamp);
+    const date = parseTS(timestamp);
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
