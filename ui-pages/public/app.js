@@ -359,14 +359,14 @@ function show(msg, isLoss = false) {
 // Normalize timestamps coming from API into Date objects in user's local time.
 // - Epoch numbers: new Date(number)
 // - ISO strings with Z/offset: new Date(ts)
-// - Naïve "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS": treat as local time
+// - Naïve "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DDTHH:MM:SS": treat as UTC (from SQLite CURRENT_TIMESTAMP)
 function parseTS(ts) {
   if (ts == null) return null;
   if (typeof ts === "number") return new Date(ts);
   if (typeof ts === "string") {
     if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(ts)) {
-      // Parse naive timestamp as local time instead of forcing UTC
-      return new Date(ts.replace(" ", "T"));
+      // SQLite CURRENT_TIMESTAMP returns UTC time as naive string - treat as UTC
+      return new Date(ts.replace(" ", "T") + "Z");
     }
     return new Date(ts);
   }

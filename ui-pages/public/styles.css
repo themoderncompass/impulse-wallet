@@ -1286,6 +1286,15 @@ th, td {
     min-height: 35px !important;
   }
 
+  .site-footer .link-like {
+    font-size: 0.8rem !important;
+  }
+
+  /* Modern Compass should match other footer links on mobile */
+  .site-footer a[href*="themoderncompass.io"] {
+    font-size: 0.8rem !important;
+  }
+
   .site-footer .legal-links {
     margin-bottom: 0.1rem !important;
   }
@@ -1444,13 +1453,18 @@ main.container {
     overflow-x: hidden;
     overflow-y: auto;
     min-height: 100vh; /* Minimum full height */
+    min-height: 100dvh; /* Use dynamic viewport height where supported */
     height: auto; /* Allow natural expansion */
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    scroll-behavior: smooth; /* Smooth scrolling */
   }
 
   main.container {
     overflow-y: visible; /* Let natural scrolling work */
     -webkit-overflow-scrolling: touch;
     padding-bottom: 2rem; /* Ensure footer clearance */
+    flex: 1 0 auto; /* Allow proper flex growth */
+    min-height: 0; /* Allow flex child to shrink */
   }
 
   .site-footer {
