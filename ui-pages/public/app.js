@@ -690,24 +690,17 @@ async function doJoin() {
     const inputRoomCode = (el.roomCode.value || "").trim().toUpperCase();
     const inviteCode = (el.inviteCode.value || "").trim().toUpperCase();
 
-    // Must have either room code OR invite code
-    if (!inputRoomCode && !inviteCode) {
-      throw new Error("Enter either a room name or an invite code");
+    // Join requires invite code
+    if (!inviteCode) {
+      throw new Error("Enter an invite code to join a room");
     }
 
     const uuid = currentUserId || getUserId();
     if (!uuid) throw new Error("Missing UUID; reload and try again.");
 
-    // Determine which flow to use
-    if (inviteCode) {
-      // Use invite code flow (private room)
-      roomCode = "INVITE";
-      var payload = { roomCode, displayName, userId: uuid, inviteCode };
-    } else {
-      // Use room code flow (public room)
-      roomCode = inputRoomCode;
-      var payload = { roomCode, displayName, userId: uuid };
-    }
+    // Use invite code flow (private room)
+    roomCode = "INVITE";
+    var payload = { roomCode, displayName, userId: uuid, inviteCode };
     console.debug("POST /room payload:", payload);
 
     const result = await api("/room", {
@@ -735,6 +728,10 @@ async function doJoin() {
     const msg = String(e.message || "");
     if (msg.includes("DUPLICATE_NAME") || e.status === 409) {
       alert("That display name is already taken in this room. Please choose another.");
+      return;
+    }
+    if (msg.includes("ROOM_NOT_FOUND") || msg.includes("Invalid invite code") || e.status === 404) {
+      alert("That room doesn't exist or the invite code is invalid. Please check the invite code.");
       return;
     }
     console.error(e);
@@ -1453,7 +1450,7 @@ function initHistoryModal() {
   
   function formatTimestamp(timestamp) {
     try {
-      const date = new Date(timestamp);
+      const date = parseTS(timestamp);
       return date.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -1693,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Global utility function for formatting timestamps
 window.formatTimestamp = function(timestamp) {
   try {
-    const date = new Date(timestamp);
+    const date = parseTS(timestamp);
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
