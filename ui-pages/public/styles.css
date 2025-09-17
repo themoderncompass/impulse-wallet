@@ -235,6 +235,17 @@ button.bad  { background: #d33; color: #fff; border-color: #c22 }
 
 .banner.banner-loss { background: #fff4f4 }
 
+.virtual-disclaimer {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  margin: 0 0 0.75rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -1010,16 +1021,13 @@ th, td {
   .container {
     margin: 0.5rem auto !important;
     padding: 0 0.5rem !important;
-    min-height: 100vh;
     overflow-x: hidden;
-    overflow-y: auto;
   }
 
   body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    overflow-y: auto;
     position: relative;
   }
 
@@ -1274,7 +1282,7 @@ th, td {
   .site-footer {
     margin-top: 0.5rem !important;
     padding: 0.25rem 0 !important;
-    font-size: 9px !important;
+    font-size: 0.8rem !important;
     min-height: 35px !important;
   }
 
@@ -1427,32 +1435,32 @@ main.container {
 
 /* MOBILE VIEWPORT HEIGHT CONSTRAINTS - Fixed for scroll issues */
 @media (max-width: 768px) {
-  html, body {
-    height: 100vh;
-    height: 100dvh; /* Use dynamic viewport height on supported browsers */
-    overflow-x: hidden; /* Only hide horizontal overflow */
-    overflow-y: auto; /* Allow vertical scrolling */
+  html {
+    overflow-x: hidden;
+    height: auto; /* Allow natural height expansion */
+  }
+
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 100vh; /* Minimum full height */
+    height: auto; /* Allow natural expansion */
   }
 
   main.container {
-    min-height: calc(100vh - 50px);
-    min-height: calc(100dvh - 50px);
-    overflow-y: auto;
+    overflow-y: visible; /* Let natural scrolling work */
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain; /* Prevent scroll chaining */
+    padding-bottom: 2rem; /* Ensure footer clearance */
   }
 
   .site-footer {
     min-height: 35px;
   }
 
-  /* ENSURE PLAY SECTION FITS IN VIEWPORT */
+  /* ENSURE PLAY SECTION IS SCROLLABLE */
   #play {
-    min-height: calc(100vh - 100px);
-    min-height: calc(100dvh - 100px);
-    overflow-y: auto;
-    padding-bottom: 1rem;
-    overscroll-behavior: contain; /* Prevent scroll chaining */
+    overflow-y: visible;
+    padding-bottom: 2rem;
   }
 }
 

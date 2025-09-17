@@ -14,6 +14,16 @@ const generateInviteCode = () => {
   return result;
 };
 
+// Generate a random room code (5 characters, letters only)
+const generateRoomCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let result = '';
+  for (let i = 0; i < 5; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
 // Ensure/upgrade schema (idempotent). Call at the start of GET/POST.
 async function ensureSchema(env) {
   // rooms table (codes stored UPPERCASE by us)
@@ -22,7 +32,7 @@ async function ensureSchema(env) {
       code TEXT PRIMARY KEY,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       is_locked INTEGER DEFAULT 0,
-      invite_only INTEGER DEFAULT 0,
+      invite_only INTEGER DEFAULT 1,
       created_by TEXT,
       max_members INTEGER DEFAULT 50,
       invite_code TEXT
@@ -39,7 +49,7 @@ async function ensureSchema(env) {
   };
   
   await addColumnIfNotExists('is_locked', 'INTEGER DEFAULT 0');
-  await addColumnIfNotExists('invite_only', 'INTEGER DEFAULT 0');
+  await addColumnIfNotExists('invite_only', 'INTEGER DEFAULT 1');
   await addColumnIfNotExists('created_by', 'TEXT');
   await addColumnIfNotExists('max_members', 'INTEGER DEFAULT 50');
   await addColumnIfNotExists('invite_code', 'TEXT');
@@ -93,7 +103,7 @@ export const onRequestGet = async ({ request, env }) => {
 
     const room = await env.DB
       .prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?")
-      .bind(roomCode)
+      .bind(actualRoomCode)
       .first();
 
     if (!room) return json({ error: "Room not found" }, 404);
@@ -107,7 +117,7 @@ export const onRequestGet = async ({ request, env }) => {
           WHERE room_code = ? AND name_norm = ?
           LIMIT 1
         `)
-        .bind(roomCode, nameNorm)
+        .bind(actualRoomCode, nameNorm)
         .first();
 
       if (taken && taken.user_id !== userId) {
@@ -133,22 +143,56 @@ export const onRequestPost = async ({ request, env }) => {
 
     const body = await request.json().catch(() => ({}));
     const roomCodeRaw = body?.roomCode || "";
-    const roomCode = roomCodeRaw.trim().toUpperCase();  // canonicalize
+    const roomCode = roomCodeRaw ? roomCodeRaw.trim().toUpperCase() : "";  // canonicalize if provided
     const displayName = (body?.displayName || "").trim();
     const userId = (body?.userId || "").trim();
     const providedInviteCode = (body?.inviteCode || "").trim().toUpperCase();
 
-    if (!roomCode) return json({ error: "roomCode required" }, 400);
-    
-    // Enhanced room code validation and collision prevention
-    if (roomCode.length < 3) {
-      return json({ 
-        error: "Room code must be at least 3 characters long",
-        error_code: "ROOM_CODE_TOO_SHORT" 
-      }, 400);
+    // Allow empty room code for auto-generation when creating new rooms
+    // Require either a room code or invite code for joining
+    if (!roomCode && !providedInviteCode && !displayName) {
+      return json({ error: "roomCode or inviteCode required" }, 400);
+    }
+
+    // Handle different room code scenarios
+    let actualRoomCode = roomCode;
+
+    if (!roomCode) {
+      // Auto-generate room code for new room creation
+      actualRoomCode = generateRoomCode();
+    } else if (roomCode === "INVITE") {
+      // Handle invite-code-only joins
+      if (!providedInviteCode) {
+        return json({
+          error: "Invite code required for joining",
+          error_code: "INVITE_CODE_REQUIRED"
+        }, 400);
+      }
+
+      // Look up the actual room code from the invite code
+      const roomFromInvite = await env.DB.prepare(`
+        SELECT code FROM rooms WHERE invite_code = ?
+      `).bind(providedInviteCode).first();
+
+      if (!roomFromInvite) {
+        return json({
+          error: "Invalid invite code",
+          error_code: "INVALID_INVITE_CODE"
+        }, 403);
+      }
+
+      actualRoomCode = roomFromInvite.code;
+    } else {
+      // Enhanced room code validation and collision prevention
+      if (roomCode.length < 3) {
+        return json({
+          error: "Room code must be at least 3 characters long",
+          error_code: "ROOM_CODE_TOO_SHORT"
+        }, 400);
+      }
     }
     
-    if (roomCode.length > 12) {
+    if (actualRoomCode.length > 12) {
       return json({ 
         error: "Room code must be 12 characters or less",
         error_code: "ROOM_CODE_TOO_LONG" 
@@ -157,7 +201,7 @@ export const onRequestPost = async ({ request, env }) => {
     
     // Check for inappropriate/reserved room codes
     const reservedCodes = ['ADMIN', 'API', 'TEST', 'DEBUG', 'NULL', 'UNDEFINED', 'ERROR'];
-    if (reservedCodes.includes(roomCode)) {
+    if (reservedCodes.includes(actualRoomCode)) {
       return json({ 
         error: "This room code is reserved. Please choose a different one.",
         error_code: "ROOM_CODE_RESERVED" 
@@ -167,20 +211,20 @@ export const onRequestPost = async ({ request, env }) => {
     // Check if room already exists to determine if we need to generate invite code
     const existingRoom = await env.DB.prepare(
       "SELECT code, invite_code FROM rooms WHERE code = ?"
-    ).bind(roomCode).first();
+    ).bind(actualRoomCode).first();
     
     // Generate invite code for new rooms
     const inviteCode = existingRoom?.invite_code || generateInviteCode();
     
-    // Upsert room with retry logic - set creator and invite code if it's a new room
+    // Upsert room with retry logic - set creator, invite code, and private-by-default if it's a new room
     await upsertWithRetry(env,
-      "INSERT OR IGNORE INTO rooms (code, created_by, invite_code) VALUES (?, ?, ?)",
-      [roomCode, userId || 'anonymous', inviteCode]
+      "INSERT OR IGNORE INTO rooms (code, created_by, invite_code, invite_only) VALUES (?, ?, ?, 1)",
+      [actualRoomCode, userId || 'anonymous', inviteCode]
     );
     
     // Log room creation/access event
     await logEvent(env, 'room_accessed', {
-      roomCode,
+      roomCode: actualRoomCode,
       userId: userId || 'anonymous',
       action: 'create_or_access'
     });
@@ -188,7 +232,7 @@ export const onRequestPost = async ({ request, env }) => {
     // Check room status after ensuring it exists
     const roomStatus = await env.DB
       .prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?")
-      .bind(roomCode)
+      .bind(actualRoomCode)
       .first();
 
     // If the client provided a name, claim/update membership for this UUID
@@ -200,7 +244,7 @@ export const onRequestPost = async ({ request, env }) => {
         // Get the room's invite code for validation
         const roomWithInvite = await env.DB
           .prepare("SELECT invite_code FROM rooms WHERE code = ?")
-          .bind(roomCode)
+          .bind(actualRoomCode)
           .first();
         
         // If no invite code provided or doesn't match, deny access
@@ -235,7 +279,7 @@ export const onRequestPost = async ({ request, env }) => {
           WHERE room_code = ? AND name_norm = ?
           LIMIT 1
         `)
-        .bind(roomCode, nameNorm)
+        .bind(actualRoomCode, nameNorm)
         .first();
 
       if (existingByName && existingByName.user_id !== userId) {
@@ -253,11 +297,11 @@ export const onRequestPost = async ({ request, env }) => {
           name = excluded.name,
           name_norm = excluded.name_norm,
           last_seen_at = CURRENT_TIMESTAMP
-      `, [roomCode, userId, displayName, nameNorm]);
+      `, [actualRoomCode, userId, displayName, nameNorm]);
       
       // Log membership event
       await logEvent(env, 'user_joined_room', {
-        roomCode,
+        roomCode: actualRoomCode,
         userId,
         displayName,
         isNewMember: membershipResult.changes > 0
@@ -266,7 +310,7 @@ export const onRequestPost = async ({ request, env }) => {
 
     const room = await env.DB
       .prepare("SELECT code, created_at, is_locked, invite_only, created_by, max_members FROM rooms WHERE code = ?")
-      .bind(roomCode)
+      .bind(actualRoomCode)
       .first();
 
     return json({ ok: true, room });
