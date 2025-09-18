@@ -95,6 +95,319 @@ body {
   padding: 0 1rem;
 }
 
+/* TABLET AND DESKTOP IMPROVEMENTS - Mobile experience untouched */
+@media (min-width: 769px) {
+  .container {
+    max-width: 1200px;
+    margin: 0.5rem auto;
+    padding: 0 1.5rem;
+  }
+
+  /* Create main app layout with sidebar - fit EVERYTHING in viewport including footer */
+  #play {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.5rem;
+    align-items: start;
+    max-height: calc(100vh - 280px);
+  }
+
+  /* Main content area (left side) - very compact */
+  .main-app-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  /* Smaller wallet to fit everything including footer */
+  .wallet-header {
+    max-width: 100%;
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wallet-image {
+    width: 420px !important;
+    height: 280px !important;
+  }
+
+  .balance-display {
+    padding: 16px 24px;
+    margin-left: -30px;
+    border-radius: 14px;
+  }
+
+  .balance-amount {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+
+  .balance-label {
+    font-size: 13px;
+  }
+
+  /* Very compact sidebar to fit in viewport with footer */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: calc(100vh - 280px);
+    overflow: hidden;
+  }
+
+  /* Very compact sidebar controls section */
+  .sidebar-controls {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    padding: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    flex-shrink: 0;
+  }
+
+  /* Very compact focus areas and actions */
+  .sidebar .focus-areas,
+  .sidebar .balance-actions {
+    margin-bottom: 0.75rem;
+    padding: 0;
+  }
+
+  .sidebar .focus-areas:last-child,
+  .sidebar .balance-actions:last-child {
+    margin-bottom: 0;
+  }
+
+  .sidebar .section-title {
+    font-size: 14px;
+    margin-bottom: 6px;
+    text-align: center;
+    color: #2d3748;
+    font-weight: 700;
+  }
+
+  /* Very compact focus chips */
+  .sidebar .focus-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .sidebar .focus-chips .chip {
+    padding: 6px 10px;
+    font-size: 12px;
+    margin: 0;
+    text-align: center;
+  }
+
+  .sidebar .focus-selection-prompt {
+    padding: 10px;
+    margin: 0;
+    text-align: center;
+    font-size: 12px;
+  }
+
+  /* Very compact action buttons */
+  .sidebar .action-button {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .sidebar #impulse {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  /* Very compact leaderboard */
+  .sidebar .leaderboard {
+    background: rgba(255,255,255,0.95);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 0;
+    max-width: 100%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .sidebar .leaderboard-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+    text-align: center;
+    color: #2d3748;
+    font-weight: 700;
+  }
+
+  .sidebar #board {
+    font-size: 12px;
+  }
+
+  .sidebar #board th,
+  .sidebar #board td {
+    padding: 6px 4px;
+  }
+
+  /* History button spans full width for desktop - positioned outside grid */
+  .history-button {
+    width: 100%;
+    max-width: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    margin: 1rem 0 0 0;
+    grid-column: 1 / -1; /* Span all grid columns */
+  }
+
+  /* Very compact action buttons row */
+  .action-buttons-row {
+    justify-content: center;
+    max-width: 420px;
+    margin: 0 auto 0.5rem auto;
+    gap: 0.75rem;
+  }
+
+  .action-buttons-row .outline-button {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* History Modal - Span ENTIRE container width (wallet + sidebar + gap) */
+  .modal-content.modal-content-wide {
+    width: calc(1200px - 4rem) !important; /* Container minus padding */
+    max-width: calc(100vw - 4rem) !important;
+    min-width: calc(1200px - 4rem) !important; /* Force minimum width */
+    max-height: 90vh;
+    margin: 0 auto;
+  }
+
+  /* Very compact header */
+  .header {
+    max-width: 600px;
+    margin: 0.25rem auto 0.5rem auto;
+  }
+
+  /* Compact footer */
+  .site-footer {
+    margin-top: 1rem;
+    padding: 0.75rem 0;
+    font-size: 0.85rem;
+  }
+
+  /* Remove main-content grid since we moved everything to sidebar */
+  .main-content {
+    display: none;
+  }
+}
+
+/* TABLET SPECIFIC ADJUSTMENTS - Optimized for iPad with footer */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    max-width: 1000px;
+    margin: 0.25rem auto;
+  }
+
+  #play {
+    grid-template-columns: 1fr 280px;
+    gap: 1.25rem;
+    max-height: calc(100vh - 250px);
+  }
+
+  .wallet-image {
+    width: 380px !important;
+    height: 253px !important;
+  }
+
+  .balance-amount {
+    font-size: 28px;
+  }
+
+  .balance-display {
+    padding: 14px 20px;
+    margin-left: -25px;
+  }
+
+  .sidebar {
+    gap: 0.5rem;
+    max-height: calc(100vh - 250px);
+  }
+
+  .sidebar-controls {
+    padding: 10px;
+  }
+
+  .sidebar .leaderboard {
+    padding: 10px;
+  }
+
+  .sidebar .section-title {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .sidebar .action-button {
+    padding: 6px 12px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .sidebar .focus-chips .chip {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .sidebar .focus-selection-prompt {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .sidebar #impulse {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .sidebar #board th,
+  .sidebar #board td {
+    padding: 4px 3px;
+    font-size: 11px;
+  }
+
+  .sidebar .leaderboard-title {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .history-button {
+    width: 100%;
+    max-width: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    margin: 1rem 0 0 0;
+  }
+
+  .action-buttons-row .outline-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .header {
+    margin: 0.15rem auto 0.25rem auto;
+  }
+
+  /* History Modal - Span ENTIRE iPad container width (wallet + sidebar + gap) */
+  .modal-content.modal-content-wide {
+    width: calc(1000px - 1rem) !important; /* Container minus smaller padding */
+    max-width: calc(100vw - 1rem) !important;
+    min-width: calc(1000px - 1rem) !important; /* Force minimum width */
+  }
+}
+
 /* Header: title centered, settings menu top right */
 .header {
   position: relative;
@@ -310,11 +623,7 @@ th, td {
 .modal-body ol, .modal-body ul { margin: .5rem 0 .25rem 1.25rem; }
 .modal-body h3 { margin-top: 1rem; }
 
-/* History Modal Specific Styles */
-.modal-content-wide {
-  width: min(900px, 95vw);
-  max-height: 90vh;
-}
+/* History Modal Specific Styles - Responsive rules handled in media queries */
 
 .history-controls {
   display: flex;

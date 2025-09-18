@@ -171,76 +171,82 @@
       </div>
 
       <div id="play" class="hidden">
-
-        <!-- Wallet Header -->
-        <div class="wallet-header">
-          <div class="wallet-meta">
-            <span id="week"></span>
-          </div>
-          
-          <div class="wallet-container">
-            <div class="wallet-image" id="wallet-display"></div>
-          </div>
-
-          <div class="balance-display">
-            <div class="balance-amount" id="current-balance">$0</div>
-            <div class="balance-label">Current Balance</div>
-            <div class="virtual-disclaimer">
-              <small>Accountability currency - not real money</small>
+        <!-- Main App Content (Left side on tablet/desktop) -->
+        <div class="main-app-content">
+          <!-- Wallet Header -->
+          <div class="wallet-header">
+            <div class="wallet-meta">
+              <span id="week"></span>
             </div>
-          </div>
-        </div>
 
-        <!-- Main Content Grid -->
-        <div class="main-content">
-          <!-- Focus Areas (Left) -->
-          <div class="focus-areas">
-            <div class="section-title">Focus Areas</div>
-            
-            <!-- Focus Area Selection Prompt (shown when no areas selected) -->
-            <div class="focus-selection-prompt" id="focus-selection-prompt" onclick="openFocusModal()">
-              <div class="focus-prompt-title">Choose Your Focus</div>
-              <div class="focus-prompt-subtitle">
-                Choose 3 focus areas for this week.<br>
-                Click here to get started!
+            <div class="wallet-container">
+              <div class="wallet-image" id="wallet-display"></div>
+            </div>
+
+            <div class="balance-display">
+              <div class="balance-amount" id="current-balance">$0</div>
+              <div class="balance-label">Current Balance</div>
+              <div class="virtual-disclaimer">
+                <small>Accountability currency - not real money</small>
               </div>
             </div>
-            
-            <!-- Selected Focus Areas (shown when areas are chosen) -->
-            <div id="focus-chips" class="focus-chips hidden" aria-label="Weekly focus areas"></div>
           </div>
 
-          <!-- Actions (Right) -->
-          <div class="balance-actions">
-            <div class="section-title">Actions</div>
-            <button id="plus" class="action-button deposit-btn">
-              Deposit +$1
-            </button>
-            <button id="minus" class="action-button withdraw-btn">
-              Withdrawal −$1
-            </button>
-            <input id="impulse" placeholder="Action note" />
+          <div id="banner" class="hidden banner"></div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons-row">
+            <button id="undo" class="outline-button grey-outline">Undo last (15 min)</button>
+            <button id="leave-room" class="outline-button red-outline hidden">Leave Room</button>
+          </div>
+
+        </div>
+
+        <!-- Sidebar (Right side on tablet/desktop) -->
+        <div class="sidebar">
+          <!-- Focus Areas and Actions -->
+          <div class="sidebar-controls">
+            <!-- Focus Areas -->
+            <div class="focus-areas">
+              <div class="section-title">Focus Areas</div>
+
+              <!-- Focus Area Selection Prompt (shown when no areas selected) -->
+              <div class="focus-selection-prompt" id="focus-selection-prompt" onclick="openFocusModal()">
+                <div class="focus-prompt-title">Choose Your Focus</div>
+                <div class="focus-prompt-subtitle">
+                  Choose 3 focus areas for this week.<br>
+                  Click here to get started!
+                </div>
+              </div>
+
+              <!-- Selected Focus Areas (shown when areas are chosen) -->
+              <div id="focus-chips" class="focus-chips hidden" aria-label="Weekly focus areas"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="balance-actions">
+              <div class="section-title">Actions</div>
+              <button id="plus" class="action-button deposit-btn">
+                Deposit +$1
+              </button>
+              <button id="minus" class="action-button withdraw-btn">
+                Withdrawal −$1
+              </button>
+              <input id="impulse" placeholder="Action note" />
+            </div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="leaderboard">
+            <div class="leaderboard-title">Leaderboard</div>
+            <table id="board">
+              <thead><tr><th>Player</th><th>Progress</th><th>Streak</th></tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
 
-        <div id="banner" class="hidden banner"></div>
-
-        <!-- Leaderboard -->
-        <div class="leaderboard">
-          <div class="leaderboard-title">Leaderboard</div>
-          <table id="board">
-            <thead><tr><th>Player</th><th>Progress</th><th>Streak</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="action-buttons-row">
-          <button id="undo" class="outline-button grey-outline">Undo last (15 min)</button>
-          <button id="leave-room" class="outline-button red-outline hidden">Leave Room</button>
-        </div>
-
-        <!-- My History Button -->
+        <!-- My History Button - spans entire container width -->
         <button id="history-open" class="history-button" type="button" aria-haspopup="dialog" aria-controls="history-modal">
           My History
         </button>
@@ -440,6 +446,12 @@
   <div class="modal-content modal-content-wide" role="document" tabindex="-1">
     <button id="history-close" class="modal-close" type="button" aria-label="Close history">×</button>
     <h2 id="history-title">My History</h2>
+    <div id="debug-info" style="background: #ff0; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px;">
+      <div>Modal Width: <span id="modal-debug-width"></span>px</div>
+      <div>Container Width: <span id="container-debug-width"></span>px</div>
+      <div>Viewport Width: <span id="viewport-debug-width"></span>px</div>
+      <div>Computed Style Width: <span id="computed-debug-width"></span></div>
+    </div>
     <div class="modal-body">
       <div class="history-controls">
         <div class="history-filters">
@@ -601,6 +613,40 @@
     <button class="celebration-close" onclick="closeWarning()">I Got This</button>
   </div>
 </div>
+
+<!-- Modal Debug Script -->
+<script>
+// Add debug info to history modal
+function updateModalDebugInfo() {
+  try {
+    const modal = document.querySelector('#history-modal .modal-content-wide');
+    const container = document.querySelector('.container');
+
+    if (modal && container) {
+      const modalRect = modal.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const computedStyle = window.getComputedStyle(modal);
+
+      document.getElementById('modal-debug-width').textContent = Math.round(modalRect.width);
+      document.getElementById('container-debug-width').textContent = Math.round(containerRect.width);
+      document.getElementById('viewport-debug-width').textContent = window.innerWidth;
+      document.getElementById('computed-debug-width').textContent = computedStyle.width;
+    }
+  } catch (e) {
+    console.error('Debug update error:', e);
+  }
+}
+
+// Hook into history modal opening
+document.addEventListener('DOMContentLoaded', function() {
+  const historyButton = document.getElementById('history-open');
+  if (historyButton) {
+    historyButton.addEventListener('click', function() {
+      setTimeout(updateModalDebugInfo, 100);
+    });
+  }
+});
+</script>
 
 <!-- Contact modal script (runs after app.js, fully defensive) -->
 <script>
