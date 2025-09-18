@@ -7,6 +7,7 @@ node_modules/
 # Claude Code configuration (but allow agents)
 .claude/*
 !.claude/agents/
+!.claude/agents/*.json
 
 # OS generated files
 .DS_Store

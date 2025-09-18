@@ -200,6 +200,10 @@
             <button id="leave-room" class="outline-button red-outline hidden">Leave Room</button>
           </div>
 
+          <!-- My History Button -->
+          <button id="history-open" class="history-button" type="button" aria-haspopup="dialog" aria-controls="history-modal">
+            My History
+          </button>
         </div>
 
         <!-- Sidebar (Right side on tablet/desktop) -->
@@ -245,11 +249,6 @@
             </table>
           </div>
         </div>
-
-        <!-- My History Button - spans entire container width -->
-        <button id="history-open" class="history-button" type="button" aria-haspopup="dialog" aria-controls="history-modal">
-          My History
-        </button>
       </div>
     </section>
       <!-- Footer -->
@@ -446,12 +445,6 @@
   <div class="modal-content modal-content-wide" role="document" tabindex="-1">
     <button id="history-close" class="modal-close" type="button" aria-label="Close history">×</button>
     <h2 id="history-title">My History</h2>
-    <div id="debug-info" style="background: #ff0; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px;">
-      <div>Modal Width: <span id="modal-debug-width"></span>px</div>
-      <div>Container Width: <span id="container-debug-width"></span>px</div>
-      <div>Viewport Width: <span id="viewport-debug-width"></span>px</div>
-      <div>Computed Style Width: <span id="computed-debug-width"></span></div>
-    </div>
     <div class="modal-body">
       <div class="history-controls">
         <div class="history-filters">
