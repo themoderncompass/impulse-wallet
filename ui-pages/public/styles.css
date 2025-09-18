@@ -260,13 +260,13 @@ body {
     padding: 6px 4px;
   }
 
-  /* History button - span both columns for desktop */
+  /* History button - positioned under action buttons, spans full width */
   .history-button {
     width: calc(100% + 300px + 1.5rem);
     max-width: none;
     padding: 10px 20px;
     font-size: 14px;
-    margin: 1rem auto 0 auto;
+    margin: 0.75rem 0 0 0;
     position: relative;
   }
 
