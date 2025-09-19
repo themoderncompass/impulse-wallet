@@ -956,6 +956,38 @@ document.addEventListener('DOMContentLoaded', () => {
   closeBtn.addEventListener('click', close);
   modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 })();
+
+// --- Page Visibility API: Handle app backgrounding/foregrounding ---
+let lastVisibilityRefresh = 0;
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && roomCode && currentUserId) {
+    // Throttle to prevent race conditions with background refresh
+    const now = Date.now();
+    if (now - lastVisibilityRefresh < 2000) {
+      console.log('Visibility refresh skipped (too recent)');
+      return;
+    }
+    lastVisibilityRefresh = now;
+
+    // App came back from background - refresh focus areas and general state
+    console.log('App returned from background, refreshing state...');
+
+    // Refresh focus areas first (most important for the reported issue)
+    try {
+      initWeeklyFocusUI().catch(console.warn);
+    } catch (e) {
+      console.warn('Focus refresh failed on visibility change:', e);
+    }
+
+    // Then refresh general state
+    try {
+      refresh().catch(console.warn);
+    } catch (e) {
+      console.warn('General refresh failed on visibility change:', e);
+    }
+  }
+});
+
 // --- background refresh ---
 setInterval(() => { refresh(); }, 5000);
 
