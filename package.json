@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/themoderncompass/impulse-wallet#readme",
   "devDependencies": {
+    "playwright": "^1.55.0",
     "wrangler": "^4.35.0"
   },
   "dependencies": {
