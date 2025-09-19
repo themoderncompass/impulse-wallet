@@ -95,6 +95,114 @@ body {
   padding: 0 1rem;
 }
 
+/* === DESKTOP & TABLET IMPROVEMENTS === */
+/* Mobile-first approach: only applies to larger screens */
+@media (min-width: 769px) {
+  .container {
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 0 2rem;
+  }
+
+  /* Desktop Layout: Create a sidebar layout by reordering existing elements */
+  #play:not(.hidden) {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-areas:
+      "wallet sidebar-top"
+      "buttons sidebar-top"
+      "history sidebar-bottom";
+    gap: 2rem;
+    align-items: start;
+  }
+
+  /* Position existing elements in the grid */
+  .wallet-header {
+    grid-area: wallet;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .action-buttons-row {
+    grid-area: buttons;
+    justify-self: center;
+  }
+
+  .history-button {
+    grid-area: history;
+    justify-self: center;
+    max-width: 400px;
+  }
+
+  /* Create sidebar sections with explicit positioning */
+  .main-content {
+    grid-area: sidebar-top;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    /* Reset mobile grid layout */
+    grid-template-columns: none;
+  }
+
+  .leaderboard {
+    grid-area: sidebar-bottom;
+    align-self: start;
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    margin: 0;
+  }
+
+  /* Style the focus areas and actions as sidebar sections */
+  .focus-areas,
+  .balance-actions {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .focus-areas .section-title,
+  .balance-actions .section-title {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+
+  /* Action buttons full width in sidebar */
+  .balance-actions .action-button {
+    width: 100%;
+    margin-bottom: 0.75rem;
+  }
+
+  .balance-actions #impulse {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  /* Focus chips in column layout */
+  .focus-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .focus-chips .chip {
+    text-align: center;
+    margin: 0;
+  }
+
+  .focus-selection-prompt {
+    text-align: center;
+    padding: 1rem;
+  }
+
+  /* Hide banner on desktop for cleaner layout */
+  #banner {
+    display: none !important;
+  }
+}
+
 /* Header: title centered, settings menu top right */
 .header {
   position: relative;

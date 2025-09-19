@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Modal Width Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: #f0f0f0; padding: 20px; }
+        .test-button { background: #007cba; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content-wide {
+            width: 1200px !important;
+            max-width: calc(100vw - 3rem) !important;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 0 auto;
+        }
+        .debug { margin-top: 20px; background: #eee; padding: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Container Width Test</h1>
+        <p>This container should be 1200px max-width</p>
+        <button class="test-button" onclick="showModal()">Show Modal</button>
+
+        <div class="debug">
+            <p>Container width: <span id="container-width"></span>px</p>
+            <p>Viewport width: <span id="viewport-width"></span>px</p>
+        </div>
+    </div>
+
+    <div class="modal" id="test-modal">
+        <div class="modal-content-wide">
+            <h2>Modal Width Test</h2>
+            <p>This modal should match the container width (1200px)</p>
+            <p>Modal width: <span id="modal-width"></span>px</p>
+            <button onclick="hideModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        function updateSizes() {
+            const container = document.querySelector('.container');
+            const modal = document.querySelector('.modal-content-wide');
+
+            document.getElementById('container-width').textContent = container.offsetWidth;
+            document.getElementById('viewport-width').textContent = window.innerWidth;
+            document.getElementById('modal-width').textContent = modal.offsetWidth;
+        }
+
+        function showModal() {
+            document.getElementById('test-modal').classList.add('show');
+            setTimeout(updateSizes, 100);
+        }
+
+        function hideModal() {
+            document.getElementById('test-modal').classList.remove('show');
+        }
+
+        window.addEventListener('resize', updateSizes);
+        updateSizes();
+    </script>
+</body>
+</html>
